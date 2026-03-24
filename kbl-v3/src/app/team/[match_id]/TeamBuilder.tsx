@@ -248,31 +248,45 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
           </div>
 
           <div style={{ padding: '0 1rem' }}>
-            {selectedPlayers.map((p: any) => {
-              const isC = captainId === p.id;
-              const isVC = viceCaptainId === p.id;
+            {['WK', 'BAT', 'AR', 'BOWL'].map(roleKey => {
+              const rolePlayers = selectedPlayers.filter((p: any) => getRoleTab(p.role) === roleKey);
+              if (rolePlayers.length === 0) return null;
               
+              const sectionTitle = roleKey === 'WK' ? 'WICKET-KEEPERS' : roleKey === 'BAT' ? 'BATTERS' : roleKey === 'AR' ? 'ALL-ROUNDERS' : 'BOWLERS';
+
               return (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '1rem 0', borderBottom: '1px solid #F1F5F9' }}>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <img src="https://h.cricapi.com/img/icon512.png" alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
-                    <div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B' }}>{p.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{getRoleTab(p.role)}</div>
-                    </div>
+                <div key={roleKey}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.25rem', marginBottom: '0.25rem', marginTop: '1rem', letterSpacing: '0.05em' }}>
+                    {sectionTitle}
                   </div>
-                  
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button 
-                      onClick={() => { setCaptainId(p.id); if(viceCaptainId === p.id) setViceCaptainId(''); }}
-                      style={{ width: 36, height: 36, borderRadius: '50%', background: isC ? '#1E293B' : '#F8FAFC', color: isC ? '#fff' : '#64748B', border: '1px solid', borderColor: isC ? '#1E293B' : '#E2E8F0', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >C</button>
+                  {rolePlayers.map((p: any) => {
+                    const isC = captainId === p.id;
+                    const isVC = viceCaptainId === p.id;
                     
-                    <button 
-                      onClick={() => { setViceCaptainId(p.id); if(captainId === p.id) setCaptainId(''); }}
-                      style={{ width: 36, height: 36, borderRadius: '50%', background: isVC ? '#3B82F6' : '#F8FAFC', color: isVC ? '#fff' : '#64748B', border: '1px solid', borderColor: isVC ? '#3B82F6' : '#E2E8F0', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >VC</button>
-                  </div>
+                    return (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #F1F5F9' }}>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <img src="https://h.cricapi.com/img/icon512.png" alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                          <div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{getRoleTab(p.role)}</div>
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <button 
+                            onClick={() => { setCaptainId(p.id); if(viceCaptainId === p.id) setViceCaptainId(''); }}
+                            style={{ width: 36, height: 36, borderRadius: '50%', background: isC ? '#1E293B' : '#F8FAFC', color: isC ? '#fff' : '#64748B', border: '1px solid', borderColor: isC ? '#1E293B' : '#E2E8F0', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >C</button>
+                          
+                          <button 
+                            onClick={() => { setViceCaptainId(p.id); if(captainId === p.id) setCaptainId(''); }}
+                            style={{ width: 36, height: 36, borderRadius: '50%', background: isVC ? '#3B82F6' : '#F8FAFC', color: isVC ? '#fff' : '#64748B', border: '1px solid', borderColor: isVC ? '#3B82F6' : '#E2E8F0', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >VC</button>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )
             })}
