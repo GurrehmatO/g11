@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { saveTeam } from './actions'
 import { Eye, ChevronLeft, Plus, Minus, Info, X } from 'lucide-react'
+import { RulesModal } from '@/components/RulesModal'
 
 type Player = {
   id: string
@@ -44,6 +45,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [timeLeft, setTimeLeft] = useState('')
+  const [isRulesOpen, setIsRulesOpen] = useState(false)
 
   // Generic team stats
   const teamA = matchInfo.team_a;
@@ -323,7 +325,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
               <div style={{ fontSize: '0.8rem', color: '#aaa' }}>{timeLeft || 'Calculating...'}</div>
             </div>
           </div>
-          <div style={{ border: '1px solid #71717A', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 'bold', color: '#E4E4E7' }}>PTS</div>
+          <button onClick={() => setIsRulesOpen(true)} style={{ background: 'transparent', border: '1px solid #71717A', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 'bold', color: '#E4E4E7', cursor: 'pointer' }}>PTS</button>
         </div>
 
         {/* Team Score Display */}
@@ -483,6 +485,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
         </button>
       </div>
 
+      <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
     </div>
   )
 }
