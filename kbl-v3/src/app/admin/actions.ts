@@ -4,7 +4,7 @@ import { createAdminClient } from '@/utils/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 const CRICAPI_KEY = process.env.CRICAPI_KEY!
-const IPL_SERIES_ID = 'd5a498c8-7596-4b93-8ab0-e0efc3345312'
+const IPL_SERIES_ID = '87c62aac-bc3c-4738-ab93-19da0690488f' // IPL 2026
 
 export async function syncMatches(formData?: FormData) {
   const supabase = createAdminClient()
