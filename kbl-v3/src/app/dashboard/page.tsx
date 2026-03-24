@@ -59,7 +59,9 @@ export default async function DashboardPage() {
                 return (
                   <div key={match.id} style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
                     <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.25rem' }}>
-                      {new Date(match.match_date).toLocaleString()}
+                    <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.25rem' }}>
+                      {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} IST
+                    </p>
                     </p>
                     <h4 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>{match.team_a} vs {match.team_b}</h4>
                     <NavButton href={`/team/${match.id}`} className={hasTeam ? "btn-secondary" : "btn-primary"} style={{ width: '100%', fontSize: '0.9rem', padding: '0.5rem', display: 'block', textAlign: 'center', background: hasTeam ? '#1E293B' : undefined, color: hasTeam ? '#fff' : undefined, border: hasTeam ? '1px solid #334155' : undefined }} pendingText="Loading Pitch...">
