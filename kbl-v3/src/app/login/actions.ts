@@ -20,7 +20,8 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    redirect('/login?message=Could not authenticate user')
+    console.error('Supabase Auth Error:', error)
+    redirect(`/login?message=${encodeURIComponent(error.message)}`)
   }
 
   redirect('/login?message=Check your email for the magic link')
