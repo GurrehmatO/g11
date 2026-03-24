@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { NavButton } from '@/components/NavButton'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -61,9 +62,9 @@ export default async function DashboardPage() {
                       {new Date(match.match_date).toLocaleString()}
                     </p>
                     <h4 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>{match.team_a} vs {match.team_b}</h4>
-                    <Link href={`/team/${match.id}`} className={hasTeam ? "btn-secondary" : "btn-primary"} style={{ width: '100%', fontSize: '0.9rem', padding: '0.5rem', display: 'block', textAlign: 'center', background: hasTeam ? '#1E293B' : undefined, color: hasTeam ? '#fff' : undefined, border: hasTeam ? '1px solid #334155' : undefined }}>
+                    <NavButton href={`/team/${match.id}`} className={hasTeam ? "btn-secondary" : "btn-primary"} style={{ width: '100%', fontSize: '0.9rem', padding: '0.5rem', display: 'block', textAlign: 'center', background: hasTeam ? '#1E293B' : undefined, color: hasTeam ? '#fff' : undefined, border: hasTeam ? '1px solid #334155' : undefined }} pendingText="Loading Pitch...">
                       {hasTeam ? 'Edit Team' : 'Draft Team'}
-                    </Link>
+                    </NavButton>
                   </div>
                 )
               })

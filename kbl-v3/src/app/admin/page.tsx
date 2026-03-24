@@ -1,6 +1,7 @@
 import { syncMatches, syncPlayers, calculateScores } from './actions'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { SubmitButton } from '@/components/SubmitButton'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -25,9 +26,9 @@ export default async function AdminPage() {
           <strong>Current Matches in DB:</strong> {matchCount || 0}
         </p>
         <form action={syncMatches}>
-          <button type="submit" className="btn-primary">
+          <SubmitButton type="submit" className="btn-primary" pendingText="Syncing...">
             Sync Matches from CricAPI
-          </button>
+          </SubmitButton>
         </form>
       </div>
 
@@ -39,9 +40,9 @@ export default async function AdminPage() {
           <strong>Current Players in DB:</strong> {playerCount || 0}
         </p>
         <form action={syncPlayers}>
-          <button type="submit" className="btn-primary">
+          <SubmitButton type="submit" className="btn-primary" pendingText="Syncing...">
             Sync Players from CricAPI
-          </button>
+          </SubmitButton>
         </form>
       </div>
 
@@ -58,9 +59,9 @@ export default async function AdminPage() {
             required 
             style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: '#0F172A', color: '#fff', fontSize: '1rem' }} 
           />
-          <button type="submit" className="btn-primary" style={{ background: '#f59e0b', color: '#000', padding: '0 1.5rem' }}>
+          <SubmitButton type="submit" className="btn-primary" style={{ background: '#f59e0b', color: '#000', padding: '0 1.5rem' }} pendingText="Simulating Match...">
             Run Engine
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>

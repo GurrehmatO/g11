@@ -1,4 +1,5 @@
 import { login } from './actions'
+import { SubmitButton } from '@/components/SubmitButton'
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ message: string }>
@@ -31,9 +32,9 @@ export default async function LoginPage(props: {
               }}
             />
           </div>
-          <button formAction={login} className="btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
+          <SubmitButton formAction={login} className="btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} pendingText="Sending Email...">
             Send Magic Link
-          </button>
+          </SubmitButton>
           
           {searchParams?.message && (
             <p style={{ marginTop: '1rem', color: 'var(--accent)', fontSize: '0.875rem', background: 'rgba(139, 92, 246, 0.1)', padding: '0.5rem', borderRadius: '4px' }}>
