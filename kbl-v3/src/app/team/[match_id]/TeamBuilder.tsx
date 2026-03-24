@@ -249,7 +249,10 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
           <div style={{ padding: '0 1rem' }}>
             {['WK', 'BAT', 'AR', 'BOWL'].map(roleKey => {
-              const rolePlayers = selectedPlayers.filter((p: any) => getRoleTab(p.role) === roleKey);
+              const rolePlayers = selectedPlayers
+                .filter((p: any) => getRoleTab(p.role) === roleKey)
+                .sort((a: any, b: any) => getDeterministicNum(b.id, 0, 300) - getDeterministicNum(a.id, 0, 300));
+                
               if (rolePlayers.length === 0) return null;
               
               const sectionTitle = roleKey === 'WK' ? 'WICKET-KEEPERS' : roleKey === 'BAT' ? 'BATTERS' : roleKey === 'AR' ? 'ALL-ROUNDERS' : 'BOWLERS';
@@ -390,14 +393,17 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
       {/* Player List Headers */}
       <div style={{ display: 'flex', background: '#F8FAFC', padding: '0.5rem 1rem', fontSize: '0.7rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #E2E8F0', textTransform: 'uppercase' }}>
-        <div style={{ width: '50%' }}>SELECTED BY</div>
+        <div style={{ width: '50%' }}>PLAYER</div>
         <div style={{ width: '35%', textAlign: 'center' }}>POINTS</div>
         <div style={{ width: '15%', textAlign: 'center' }}></div>
       </div>
 
       {/* Player List Main Area */}
       <div style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingBottom: '90px' }}>
-        {players.filter((p: any) => getRoleTab(p.role) === activeTab).map((p: any) => {
+        {players
+          .filter((p: any) => getRoleTab(p.role) === activeTab)
+          .sort((a: any, b: any) => getDeterministicNum(b.id, 0, 300) - getDeterministicNum(a.id, 0, 300))
+          .map((p: any) => {
           const isSelected = selectedIds.has(p.id)
           const disabled = isPlayerDisabled(p)
           return (
@@ -432,7 +438,6 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
               {/* Player textual Info */}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A' }}>{p.name}</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>{getDeterministicNum(p.name, 10, 80)}%</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#2563EB', marginTop: '4px', fontWeight: 500 }}>
                   <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#2563EB' }} />
                   Played last match
