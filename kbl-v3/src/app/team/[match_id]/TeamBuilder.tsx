@@ -242,10 +242,10 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
         </div>
 
         {/* List */}
-        <div style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingBottom: '90px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', background: 'var(--background)', paddingBottom: '90px' }}>
           {error && <div style={{ color: 'red', background: '#FEE2E2', padding: '0.75rem', fontSize: '0.875rem', textAlign: 'center' }}>{error}</div>}
           
-          <div style={{ display: 'flex', background: '#F8FAFC', padding: '0.5rem 1rem', fontSize: '0.75rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0 }}>
+          <div style={{ display: 'flex', background: 'var(--card)', padding: '0.5rem 1rem', fontSize: '0.75rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ flex: 1 }}>PLAYER</div>
             <div style={{ width: '40px', textAlign: 'center' }}>% C BY</div>
             <div style={{ width: '40px', textAlign: 'center', marginLeft: '1rem' }}>% VC BY</div>
@@ -263,7 +263,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
               return (
                 <div key={roleKey}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.25rem', marginBottom: '0.25rem', marginTop: '1rem', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', borderBottom: '1px solid var(--border)', paddingBottom: '0.25rem', marginBottom: '0.25rem', marginTop: '1rem', letterSpacing: '0.05em' }}>
                     {sectionTitle}
                   </div>
                   {rolePlayers.map((p: any) => {
@@ -283,12 +283,12 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                         <div style={{ display: 'flex', gap: '1rem' }}>
                           <button 
                             onClick={() => { setCaptainId(p.id); if(viceCaptainId === p.id) setViceCaptainId(''); }}
-                            style={{ width: 36, height: 36, borderRadius: '50%', background: isC ? '#1E293B' : '#F8FAFC', color: isC ? '#fff' : '#64748B', border: '1px solid', borderColor: isC ? '#1E293B' : '#E2E8F0', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            style={{ width: 36, height: 36, borderRadius: '50%', background: isC ? 'var(--primary)' : 'var(--card)', color: isC ? '#fff' : 'var(--foreground)', border: '1px solid', borderColor: isC ? 'var(--primary)' : 'var(--border)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >C</button>
                           
                           <button 
                             onClick={() => { setViceCaptainId(p.id); if(captainId === p.id) setCaptainId(''); }}
-                            style={{ width: 36, height: 36, borderRadius: '50%', background: isVC ? '#3B82F6' : '#F8FAFC', color: isVC ? '#fff' : '#64748B', border: '1px solid', borderColor: isVC ? '#3B82F6' : '#E2E8F0', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            style={{ width: 36, height: 36, borderRadius: '50%', background: isVC ? 'var(--accent)' : 'var(--card)', color: isVC ? '#fff' : 'var(--foreground)', border: '1px solid', borderColor: isVC ? 'var(--accent)' : 'var(--border)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >VC</button>
                         </div>
                       </div>
@@ -301,7 +301,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
         </div>
 
         {/* Sticky Fixed Bottom Bar Container */}
-        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: '#fff', padding: '1rem', borderTop: '1px solid #E2E8F0', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
+        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
           <button 
             disabled={loading || !captainId || !viceCaptainId}
             onClick={handleSave}
@@ -445,15 +445,15 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
               {/* Player textual Info */}
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A' }}>{p.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#2563EB', marginTop: '4px', fontWeight: 500 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#2563EB' }} />
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>{p.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#3B82F6', marginTop: '4px', fontWeight: 500 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#3B82F6' }} />
                   Played last match
                 </div>
               </div>
 
               {/* Points */}
-              <div style={{ width: '35%', textAlign: 'center', fontSize: '0.95rem', color: '#475569', fontWeight: 500 }}>
+              <div style={{ width: '35%', textAlign: 'center', fontSize: '0.95rem', color: 'var(--foreground)', fontWeight: 600, opacity: 0.9 }}>
                 {getDeterministicNum(p.id, 0, 300)}
               </div>
 
@@ -476,16 +476,16 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
       </div>
 
       {/* Sticky Fixed Bottom Area */}
-      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: '#fff', padding: '1rem', borderTop: '1px solid #E2E8F0', display: 'flex', gap: '1rem', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', zIndex: 50 }}>
+      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', zIndex: 50 }}>
         <button 
           onClick={() => setStep('preview')}
-          style={{ flex: 1, background: '#1E293B', color: '#fff', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+          style={{ flex: 1, background: 'var(--foreground)', color: 'var(--background)', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
           <Eye size={18} /> PREVIEW
         </button>
         <button 
           disabled={!isValidTeam}
           onClick={() => setStep('captain')}
-          style={{ flex: 1, background: isValidTeam ? '#F8FAFC' : '#F1F5F9', color: isValidTeam ? '#1E293B' : '#94A3B8', border: 'none', padding: '0.875rem', borderRadius: '24px', fontWeight: 700, fontSize: '0.85rem', transition: '0.2s', opacity: isValidTeam ? 1 : 0.6, cursor: isValidTeam ? 'pointer' : 'not-allowed' }}
+          style={{ flex: 1, background: isValidTeam ? 'var(--primary)' : 'var(--border)', color: isValidTeam ? '#fff' : 'var(--foreground)', border: 'none', padding: '0.875rem', borderRadius: '24px', fontWeight: 700, fontSize: '0.85rem', transition: '0.2s', opacity: isValidTeam ? 1 : 0.6, cursor: isValidTeam ? 'pointer' : 'not-allowed' }}
         >
           {isValidTeam ? 'NEXT' : validationMessage}
         </button>
