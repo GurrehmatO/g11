@@ -58,7 +58,7 @@ export default async function DashboardPage() {
               upcomingMatches.map((match) => {
                 const hasTeam = myTeamMatchIds.has(match.id);
                 return (
-                  <div key={match.id} style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                  <div key={match.id} style={{ padding: '1.5rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
                     <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.25rem' }}>
                     <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.25rem' }}>
                       {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} IST
@@ -66,14 +66,14 @@ export default async function DashboardPage() {
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                       <TeamLogo teamName={match.team_a} size={36} />
-                      <h4 style={{ fontSize: '1.1rem', margin: 0, flex: 1, textAlign: 'center', color: '#fff' }}>vs</h4>
+                      <h4 style={{ fontSize: '1.1rem', margin: 0, flex: 1, textAlign: 'center', color: 'var(--foreground)' }}>vs</h4>
                       <TeamLogo teamName={match.team_b} size={36} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '1.25rem', fontWeight: 600 }}>
                       <span style={{ textAlign: 'left', flex: 1 }}>{match.team_a}</span>
                       <span style={{ textAlign: 'right', flex: 1 }}>{match.team_b}</span>
                     </div>
-                    <NavButton href={`/team/${match.id}`} className={hasTeam ? "btn-secondary" : "btn-primary"} style={{ width: '100%', fontSize: '0.9rem', padding: '0.5rem', display: 'block', textAlign: 'center', background: hasTeam ? '#1E293B' : undefined, color: hasTeam ? '#fff' : undefined, border: hasTeam ? '1px solid #334155' : undefined }} pendingText="Loading Pitch...">
+                    <NavButton href={`/team/${match.id}`} className={hasTeam ? "btn-secondary" : "btn-primary"} style={{ width: '100%', fontSize: '0.9rem', padding: '0.5rem', display: 'block', textAlign: 'center', background: hasTeam ? 'var(--card)' : undefined, color: hasTeam ? 'var(--foreground)' : undefined, border: hasTeam ? '1px solid var(--border)' : undefined }} pendingText="Loading Pitch...">
                       {hasTeam ? 'Edit Team' : 'Draft Team'}
                     </NavButton>
                   </div>
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2.5rem' }}>
             {leaderboard && leaderboard.map((player, index) => (
-              <div key={player.id} style={{ display: 'flex', alignItems: 'center', padding: '1rem', background: player.id === user.id ? 'rgba(249, 115, 22, 0.1)' : 'rgba(255,255,255,0.05)', borderRadius: '8px', border: player.id === user.id ? '1px solid #F97316' : '1px solid transparent' }}>
+              <div key={player.id} style={{ display: 'flex', alignItems: 'center', padding: '1rem', background: player.id === user.id ? 'rgba(249, 115, 22, 0.1)' : 'transparent', borderRadius: '8px', border: player.id === user.id ? '1px solid #F97316' : '1px solid var(--border)' }}>
                 <div style={{ width: '30px', fontWeight: 'bold', color: index === 0 ? '#F59E0B' : index === 1 ? '#94A3B8' : index === 2 ? '#B45309' : '#64748B' }}>#{index + 1}</div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                     {player.id === user.id && <div style={{ fontSize: '0.7rem', color: '#F97316', fontWeight: 'bold', textTransform: 'uppercase' }}>You</div>}
                   </div>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '1.2rem', color: '#fff' }}>{player.total_points} <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 500 }}>PTS</span></div>
+                <div style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--foreground)' }}>{player.total_points} <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 500 }}>PTS</span></div>
               </div>
             ))}
             {(!leaderboard || leaderboard.length === 0) && <p style={{ color: 'var(--border)' }}>No points on the board yet!</p>}
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {completedMatches && completedMatches.length > 0 ? (
               completedMatches.map((match) => (
-                <div key={match.id} style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={match.id} style={{ padding: '1rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                       <TeamLogo teamName={match.team_a} size={24} />

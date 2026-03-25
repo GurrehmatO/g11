@@ -11,18 +11,16 @@
   --radius: 12px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #f8fafc;
-    --foreground: #0f172a;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --primary-foreground: #ffffff;
-    --card: #ffffff;
-    --card-foreground: #0f172a;
-    --border: #e2e8f0;
-    --accent: #6d28d9;
-  }
+[data-theme='light'] {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+  --accent: #6d28d9;
 }
 
 html,
@@ -68,10 +66,8 @@ button {
   border-radius: var(--radius);
 }
 
-@media (prefers-color-scheme: light) {
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.7);
-  }
+[data-theme='light'] .glass-panel {
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .heading-gradient {

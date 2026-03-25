@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 import { logout } from "./auth/actions";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -57,6 +58,7 @@ export default async function RootLayout({
         <main style={{ minHeight: 'calc(100vh - 72px)' }}>
           {children}
         </main>
+        <ThemeToggle />
       </body>
     </html>
   );

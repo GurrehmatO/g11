@@ -168,7 +168,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
             <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative' }}>
                 <PlayerAvatar playerName={p.name} size={44} />
-                <div style={{ background: p.team === teamA ? '#fff' : '#1E293B', color: p.team === teamA ? '#000' : '#fff', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+                <div style={{ background: p.team === teamA ? 'var(--foreground)' : 'var(--card)', color: p.team === teamA ? 'var(--background)' : 'var(--foreground)', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
                   {p.name.split(' ').pop()}
                 </div>
               </div>
@@ -271,11 +271,11 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                     const isVC = viceCaptainId === p.id;
                     
                     return (
-                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #F1F5F9' }}>
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           <PlayerAvatar playerName={p.name} size={44} />
                           <div>
-                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--foreground)' }}>{p.name}</div>
                             <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{getRoleTab(p.role)}</div>
                           </div>
                         </div>
@@ -327,14 +327,14 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
               <div style={{ fontSize: '0.8rem', color: '#aaa' }}>{timeLeft || 'Calculating...'}</div>
             </div>
           </div>
-          <button onClick={() => setIsRulesOpen(true)} style={{ background: 'transparent', border: '1px solid #71717A', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 'bold', color: '#E4E4E7', cursor: 'pointer' }}>PTS</button>
+          <button onClick={() => setIsRulesOpen(true)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 'bold', color: 'var(--foreground)', cursor: 'pointer' }}>PTS</button>
         </div>
 
         {/* Team Score Display */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <TeamLogo teamName={teamA} size={36} />
-            <span style={{ fontWeight: 600, color: '#D4D4D8' }}>{shortA}</span>
+            <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{shortA}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{countA}</span>
@@ -342,7 +342,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
             <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{countB}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontWeight: 600, color: '#D4D4D8' }}>{shortB}</span>
+            <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{shortB}</span>
             <TeamLogo teamName={teamB} size={36} />
           </div>
         </div>
