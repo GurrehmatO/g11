@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { saveTeam } from './actions'
 import { Eye, ChevronLeft, Plus, Minus, Info, X } from 'lucide-react'
 import { RulesModal } from '@/components/RulesModal'
+import { TeamLogo } from '@/components/TeamLogo'
+import { PlayerAvatar } from '@/components/PlayerAvatar'
 
 type Player = {
   id: string
@@ -165,7 +167,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
           {playersList.map(p => (
             <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative' }}>
-                <img src="https://h.cricapi.com/img/icon512.png" alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                <PlayerAvatar playerName={p.name} size={44} />
                 <div style={{ background: p.team === teamA ? '#fff' : '#1E293B', color: p.team === teamA ? '#000' : '#fff', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
                   {p.name.split(' ').pop()}
                 </div>
@@ -271,7 +273,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                     return (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #F1F5F9' }}>
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <img src="https://h.cricapi.com/img/icon512.png" alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                          <PlayerAvatar playerName={p.name} size={44} />
                           <div>
                             <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B' }}>{p.name}</div>
                             <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{getRoleTab(p.role)}</div>
@@ -330,8 +332,8 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
         {/* Team Score Display */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.75rem', border: '2px solid #333' }}>{shortA}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <TeamLogo teamName={teamA} size={36} />
             <span style={{ fontWeight: 600, color: '#D4D4D8' }}>{shortA}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -339,9 +341,9 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
             <span style={{ fontSize: '1.25rem', color: '#71717A', fontWeight: 300 }}>-</span>
             <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{countB}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span style={{ fontWeight: 600, color: '#D4D4D8' }}>{shortB}</span>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.75rem', border: '2px solid #333' }}>{shortB}</div>
+            <TeamLogo teamName={teamB} size={36} />
           </div>
         </div>
 
@@ -428,7 +430,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
             >
               {/* Avatar Box */}
               <div style={{ position: 'relative', marginRight: '1rem' }}>
-                <img src="https://h.cricapi.com/img/icon512.png" alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
+                <PlayerAvatar playerName={p.name} size={48} />
                 <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', background: p.team === teamA ? '#1E293B' : '#65A30D', color: '#fff', fontSize: '0.55rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                   {getShortName(p.team)}
                 </div>

@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { NavButton } from '@/components/NavButton'
+import { TeamLogo } from '@/components/TeamLogo'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -63,7 +64,15 @@ export default async function DashboardPage() {
                       {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} IST
                     </p>
                     </p>
-                    <h4 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>{match.team_a} vs {match.team_b}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                      <TeamLogo teamName={match.team_a} size={36} />
+                      <h4 style={{ fontSize: '1.1rem', margin: 0, flex: 1, textAlign: 'center', color: '#fff' }}>vs</h4>
+                      <TeamLogo teamName={match.team_b} size={36} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '1.25rem', fontWeight: 600 }}>
+                      <span style={{ textAlign: 'left', flex: 1 }}>{match.team_a}</span>
+                      <span style={{ textAlign: 'right', flex: 1 }}>{match.team_b}</span>
+                    </div>
                     <NavButton href={`/team/${match.id}`} className={hasTeam ? "btn-secondary" : "btn-primary"} style={{ width: '100%', fontSize: '0.9rem', padding: '0.5rem', display: 'block', textAlign: 'center', background: hasTeam ? '#1E293B' : undefined, color: hasTeam ? '#fff' : undefined, border: hasTeam ? '1px solid #334155' : undefined }} pendingText="Loading Pitch...">
                       {hasTeam ? 'Edit Team' : 'Draft Team'}
                     </NavButton>
@@ -105,7 +114,11 @@ export default async function DashboardPage() {
               completedMatches.map((match) => (
                 <div key={match.id} style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <h4 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{match.team_a} vs {match.team_b}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <TeamLogo teamName={match.team_a} size={24} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94A3B8' }}>vs</span>
+                      <TeamLogo teamName={match.team_b} size={24} />
+                    </div>
                     <p style={{ fontSize: '0.75rem', color: 'var(--border)' }}>{new Date(match.match_date).toLocaleDateString()}</p>
                   </div>
                   <Link href={`/match/${match.id}`} style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 600 }}>
