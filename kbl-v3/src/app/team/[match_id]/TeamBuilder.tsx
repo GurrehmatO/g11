@@ -315,9 +315,12 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
   }
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', position: 'relative' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', background: 'var(--background)', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', position: 'relative' }}>
       
-      {/* Top Dark Section */}
+      {/* ---------- STICKY TOP VIEWPORT ENCLOSURE ---------- */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'var(--background)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+      
+        {/* Top Dark Section */}
       <div style={{ background: 'linear-gradient(180deg, #1A0B1A 0%, #111420 100%)', color: 'white', padding: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -366,7 +369,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', background: '#fff', color: '#333', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+      <div style={{ display: 'flex', background: 'var(--card)', color: 'var(--foreground)', borderBottom: '1px solid var(--border)' }}>
         {['WK', 'BAT', 'AR', 'BOWL'].map(tab => {
           const countInTab = Array.from(selectedIds).filter(id => {
             const p = players.find((x: any) => x.id === id)
@@ -396,14 +399,15 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
       </div>
 
       {/* Player List Headers */}
-      <div style={{ display: 'flex', background: '#F8FAFC', padding: '0.5rem 1rem', fontSize: '0.7rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #E2E8F0', textTransform: 'uppercase' }}>
+      <div style={{ display: 'flex', background: 'var(--card)', padding: '0.5rem 1rem', fontSize: '0.7rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid var(--border)', textTransform: 'uppercase' }}>
         <div style={{ width: '50%' }}>PLAYER</div>
         <div style={{ width: '35%', textAlign: 'center' }}>POINTS</div>
         <div style={{ width: '15%', textAlign: 'center' }}></div>
       </div>
+      </div>
 
       {/* Player List Main Area */}
-      <div style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingBottom: '90px' }}>
+      <div style={{ flex: 1, paddingBottom: '100px' }}>
         {players
           .filter((p: any) => getRoleTab(p.role) === activeTab)
           .sort((a: any, b: any) => getDeterministicNum(b.id, 0, 300) - getDeterministicNum(a.id, 0, 300))
@@ -421,8 +425,8 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                 display: 'flex',
                 alignItems: 'center',
                 padding: '1rem',
-                borderBottom: '1px solid #F1F5F9',
-                background: isSelected ? '#FEFCE8' : '#fff',
+                borderBottom: '1px solid var(--border)',
+                background: isSelected ? 'rgba(34, 197, 94, 0.1)' : 'var(--card)',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 transition: 'background 0.2s',
                 opacity: disabled && !isSelected ? 0.4 : 1
