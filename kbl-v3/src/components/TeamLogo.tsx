@@ -31,23 +31,23 @@ export function TeamLogo({ teamName, size = 36, className, style }: { teamName: 
 
   if (error) {
     return (
-      <div 
+      <div
         className={className}
-        style={{ 
-          width: size, 
-          height: size, 
-          borderRadius: '50%', 
-          background: '#fff', 
-          color: '#000', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          fontWeight: 'bold', 
-          fontSize: `${size / 2.5}px`, 
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: '#fff',
+          color: '#000',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: `${size / 2.5}px`,
           border: '2px solid #333',
           lineHeight: 1,
           flexShrink: 0,
-          ...style 
+          ...style
         }}
       >
         {shortName}
@@ -56,12 +56,12 @@ export function TeamLogo({ teamName, size = 36, className, style }: { teamName: 
   }
 
   return (
-    <img 
-      src={src} 
-      alt={teamName} 
+    <img
+      src={src}
+      alt={teamName}
       className={className}
-      style={{ width: size, height: size, borderRadius: '50%', objectFit: 'contain', flexShrink: 0, ...style }} 
-      onError={() => setError(true)} 
+      style={{ width: size * 1.5, height: size * 1.5, objectFit: 'contain', flexShrink: 0, ...style }}
+      onError={() => setError(true)}
     />
   )
 }
