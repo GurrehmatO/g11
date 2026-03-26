@@ -1,4 +1,4 @@
-import { syncMatches, syncPlayers, calculateScores, syncLiveScores } from './actions'
+import { syncMatches, syncPlayers, calculateScores, syncLiveScores, calculateScoresFromAPI } from './actions'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { SubmitButton } from '@/components/SubmitButton'
@@ -80,6 +80,22 @@ export default async function AdminPage() {
           />
           <SubmitButton type="submit" className="btn-primary" style={{ background: '#f59e0b', color: '#000', padding: '0 1.5rem' }} pendingText="Simulating Match...">
             Run Final Engine
+          </SubmitButton>
+        </form>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #22C55E' }}>
+        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#22C55E' }}>5. Real Data Engine: Score from CricAPI Scorecard</h3>
+        <p style={{ color: 'var(--border)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+          Fetches a real scorecard from CricAPI, maps player stats to Dream11 points (runs, wickets, SR, economy, catches), then finalises rankings. Requires the <strong>DB Match UUID</strong> and the <strong>CricAPI Match ID</strong>.
+        </p>
+        <form action={calculateScoresFromAPI} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <input type="text" name="matchId" placeholder="DB Match UUID" required
+            style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: '#0F172A', color: '#fff', fontSize: '0.9rem' }} />
+          <input type="text" name="apiMatchId" placeholder="CricAPI Match ID (e.g. b39bbd39-c67f-...)" required
+            style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: '#0F172A', color: '#fff', fontSize: '0.9rem' }} />
+          <SubmitButton type="submit" className="btn-primary" style={{ background: '#22C55E', color: '#000', padding: '0.75rem 1.5rem', fontWeight: 700 }} pendingText="Fetching Scorecard...">
+            Score from Real Data
           </SubmitButton>
         </form>
       </div>
