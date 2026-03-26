@@ -95,40 +95,53 @@ export async function calculateScores(formData: FormData): Promise<void> {
   
   for (const p of allPlayers) {
     let points = 4; // In lineup bonus
-    
-    let hash = 0;
-    for (let i = 0; i < p.id.length; i++) hash = p.id.charCodeAt(i) + ((hash << 5) - hash);
-    const rand = Math.abs(hash % 100);
-    
-    if (p.role.includes('Bat') || p.role.includes('WK')) {
-      const runs = Math.floor(rand * 1.5);
-      points += runs;
-      if (runs >= 50 && runs < 100) points += 8;
-      if (runs >= 100) points += 16;
-      if (runs === 0 && rand < 10) points -= 2; // Duck
-      points += Math.floor(runs / 10); // 4s 
-      points += Math.floor(runs / 20) * 2; // 6s 
-      const sr = 130 + (rand - 50);
-      if (runs > 10) {
-         if (sr > 170) points += 6;
-         else if (sr > 150) points += 4;
-         else if (sr > 130) points += 2;
-         else if (sr < 50) points -= 6;
-      }
-    } else if (p.role.includes('Bowl') || p.role.includes('All')) {
-      const wickets = Math.floor(rand / 25);
+
+    // Derive two independent deterministic numbers from player ID
+    let hash1 = 0, hash2 = 0;
+    for (let i = 0; i < p.id.length; i++) {
+      hash1 = p.id.charCodeAt(i) + ((hash1 << 5) - hash1);
+      hash2 = p.id.charCodeAt(p.id.length - 1 - i) + ((hash2 << 3) - hash2);
+    }
+    const batRand = Math.abs(hash1 % 100); // 0–99, drives batting
+    const bowlRand = Math.abs(hash2 % 100); // 0–99, drives bowling
+
+    // ── BATTING (applies to ALL players who batted) ──
+    const runs = Math.floor(batRand * 1.2);
+    points += runs;
+    if (runs >= 50 && runs < 100) points += 8;  // Half-century bonus
+    if (runs >= 100) points += 16;               // Century bonus
+    if (runs === 0 && batRand < 15) points -= 2; // Duck
+    points += Math.floor(runs / 10);             // Boundary bonus (4s)
+    points += Math.floor(runs / 20) * 2;         // Six bonus
+    if (runs > 10) {
+      const sr = 80 + batRand; // simulate SR range 80–180
+      if (sr > 170) points += 6;
+      else if (sr > 150) points += 4;
+      else if (sr > 130) points += 2;
+      else if (sr < 60) points -= 2;
+      else if (sr < 50) points -= 4;
+    }
+
+    // ── BOWLING (applies to ALL players who bowled) ──
+    // Use bowlRand to determine if they bowled at all (> 30 = bowled 2+ overs)
+    if (bowlRand > 30) {
+      const wickets = Math.floor(bowlRand / 30); // 0–3 wickets
       points += wickets * 25;
-      if (wickets >= 4) points += 8;
-      if (wickets >= 5) points += 16;
-      const econ = 6 + (rand / 20);
+      if (wickets >= 4) points += 8;  // 4-wkt haul bonus
+      if (wickets >= 5) points += 16; // 5-wkt haul bonus
+      if (bowlRand % 7 === 0) points += 8; // Maiden over
+      const econ = 4 + (bowlRand % 10); // Economy 4–14
       if (econ < 5) points += 6;
       else if (econ < 6) points += 4;
-      else if (econ > 12) points -= 6;
-      else if (econ > 11) points -= 4;
-      else if (econ > 10) points -= 2;
+      else if (econ < 7) points += 2;
+      else if (econ >= 10 && econ < 11) points -= 2;
+      else if (econ >= 11 && econ < 12) points -= 4;
+      else if (econ >= 12) points -= 6;
     }
-    
-    if (rand % 5 === 0) points += 8; // Catch
+
+    // ── FIELDING ──
+    if (batRand % 5 === 0) points += 8;  // Catch
+    if (bowlRand % 12 === 0) points += 12; // Stumping / direct hit
     
     playerBasePoints[p.id] = points;
     
