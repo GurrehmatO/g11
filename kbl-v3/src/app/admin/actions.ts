@@ -334,10 +334,13 @@ export async function calculateScoresFromAPI(formData: FormData): Promise<void> 
   if (!matchId || !apiMatchId) return
 
   const supabase = createAdminClient()
+  const key = process.env.CRICAPI_KEY
+  if (!key) { console.error('CRICAPI_KEY not set'); return }
 
   // 1. Fetch scorecard from CricAPI
-  const res = await fetch(`https://api.cricapi.com/v1/match_scorecard?apikey=${CRICAPI_KEY}&id=${apiMatchId}`, { cache: 'no-store' })
-  const sc  = await res.json()
+  const res = await fetch(`https://api.cricapi.com/v1/match_scorecard?apikey=${key}&id=${apiMatchId}`, { cache: 'no-store' })
+  if (!res.ok) { console.error('CricAPI HTTP error:', res.status, await res.text()); return }
+  const sc = await res.json()
   if (sc.status !== 'success') { console.error('CricAPI error:', sc); return }
 
   const scorecard: any[] = sc.data.scorecard || []
