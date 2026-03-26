@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { NavButton } from '@/components/NavButton'
 import { TeamLogo } from '@/components/TeamLogo'
+import { PaginatedResults } from '@/components/PaginatedResults'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -141,27 +142,7 @@ export default async function DashboardPage() {
           </div>
 
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Recent Results</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {completedMatches && completedMatches.length > 0 ? (
-              completedMatches.map((match) => (
-                <div key={match.id} style={{ padding: '1rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                      <TeamLogo teamName={match.team_a} size={24} />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94A3B8' }}>vs</span>
-                      <TeamLogo teamName={match.team_b} size={24} />
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--border)' }}>{new Date(match.match_date).toLocaleDateString()}</p>
-                  </div>
-                  <Link href={`/match/${match.id}`} style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 600 }}>
-                    View Points →
-                  </Link>
-                </div>
-              ))
-            ) : (
-              <p style={{ color: 'var(--border)' }}>No completed matches yet.</p>
-            )}
-          </div>
+          <PaginatedResults matches={completedMatches || []} />
         </div>
       </div>
     </div>
