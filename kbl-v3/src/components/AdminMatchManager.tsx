@@ -1,5 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { changeMatchStatus } from '@/app/admin/actions'
 import { TeamLogo } from '@/components/TeamLogo'
 
@@ -111,16 +112,14 @@ function Section({ title, color, matches, onDone }: { title: string; color: stri
 }
 
 export function AdminMatchManager({ liveMatches, upcomingMatches, completedMatches }: { liveMatches: Match[]; upcomingMatches: Match[]; completedMatches: Match[] }) {
-  const [key, setKey] = useState(0) // force re-render hint
+  const router = useRouter()
 
   const refresh = () => {
-    // Next.js will revalidate on next navigation; for now just indicate done
-    setKey(k => k + 1)
-    window.location.reload()
+    router.refresh()
   }
 
   return (
-    <div key={key}>
+    <div>
       <Section title="Live Matches" color="#EF4444" matches={liveMatches} onDone={refresh} />
       <Section title="Upcoming Matches" color="var(--primary)" matches={upcomingMatches} onDone={refresh} />
       <Section title="Completed Matches" color="#94A3B8" matches={completedMatches} onDone={refresh} />
