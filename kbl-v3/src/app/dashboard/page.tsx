@@ -12,27 +12,32 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
+  const { data: liveMatches } = await supabase
+    .from('matches')
+    .select('id, name, match_date, team_a, team_b')
+    .eq('status', 'live')
+    .order('match_date', { ascending: true })
+
   const { data: upcomingMatches } = await supabase
     .from('matches')
     .select('id, name, match_date, team_a, team_b')
     .eq('status', 'upcoming')
     .order('match_date', { ascending: true })
     .limit(5)
-    
+
   const { data: completedMatches } = await supabase
     .from('matches')
     .select('id, name, match_date, team_a, team_b')
     .eq('status', 'completed')
     .order('match_date', { ascending: false })
-    .limit(5)
-    
+
   const { data: myTeams } = await supabase
     .from('user_teams')
     .select('match_id')
     .eq('user_id', user.id)
 
   const myTeamMatchIds = new Set(myTeams?.map(t => t.match_id) || [])
-    
+
   const { data: leaderboard } = await supabase
     .from('profiles')
     .select('id, display_name, email, total_points')
@@ -50,6 +55,35 @@ export default async function DashboardPage() {
 
       <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
         <div className="glass-panel" style={{ padding: '2rem' }}>
+          {liveMatches && liveMatches.length > 0 && (
+            <div style={{ marginBottom: '3rem' }}>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: '#EF4444', animation: 'pulse 2s infinite' }}>●</span> Live Matches
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {liveMatches.map((match) => (
+                  <div key={match.id} style={{ padding: '1.5rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid #EF4444' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid #EF4444', padding: '2px 6px', borderRadius: '4px' }}>In Progress</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                      <TeamLogo teamName={match.team_a} size={36} />
+                      <h4 style={{ fontSize: '1.1rem', margin: 0, flex: 1, textAlign: 'center', color: 'var(--foreground)' }}>vs</h4>
+                      <TeamLogo teamName={match.team_b} size={36} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '1.25rem', fontWeight: 600 }}>
+                      <span style={{ textAlign: 'left', flex: 1 }}>{match.team_a}</span>
+                      <span style={{ textAlign: 'right', flex: 1 }}>{match.team_b}</span>
+                    </div>
+                    <NavButton href={`/match/${match.id}`} className="btn-primary" style={{ width: '100%', fontSize: '0.9rem', padding: '0.5rem', display: 'block', textAlign: 'center', background: '#EF4444', color: '#fff', border: 'none' }} pendingText="Loading...">
+                      View Live Standings
+                    </NavButton>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: 'var(--primary)' }}>•</span> Upcoming Matches
           </h2>
@@ -60,9 +94,7 @@ export default async function DashboardPage() {
                 return (
                   <div key={match.id} style={{ padding: '1.5rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
                     <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.25rem' }}>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.25rem' }}>
                       {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} IST
-                    </p>
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                       <TeamLogo teamName={match.team_a} size={36} />

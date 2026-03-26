@@ -1,4 +1,4 @@
-import { syncMatches, syncPlayers, calculateScores } from './actions'
+import { syncMatches, syncPlayers, calculateScores, syncLiveScores } from './actions'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { SubmitButton } from '@/components/SubmitButton'
@@ -46,10 +46,29 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #f59e0b' }}>
-        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#f59e0b' }}>3. Advanced Engine: Trigger Match Score Calculation</h3>
+      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #3B82F6' }}>
+        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#3B82F6' }}>3. Live Engine: Sync Interim Match Scores</h3>
         <p style={{ color: 'var(--border)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-          Input an upcoming Match ID from the database. The engine will artificially end the match, evaluate ALL user teams, apply <strong>Dream11 Math</strong>, distribute <strong>Relative Ranks (tied-average logic)</strong>, and add points to user Profiles! 
+          Input an upcoming Match ID from the database. The engine will artificially set its state to <strong>LIVE</strong>, evaluate base player points, and push them to the Live Match View <strong>WITHOUT</strong> locking rankings or distributing Global Leaderboard points.
+        </p>
+        <form action={syncLiveScores} style={{ display: 'flex', gap: '1rem' }}>
+          <input 
+            type="text" 
+            name="matchId" 
+            placeholder="Paste Match UUID here..." 
+            required 
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: '#0F172A', color: '#fff', fontSize: '1rem' }} 
+          />
+          <SubmitButton type="submit" className="btn-primary" style={{ background: '#3B82F6', color: '#fff', padding: '0 1.5rem' }} pendingText="Syncing Live...">
+            Sync Live Scores
+          </SubmitButton>
+        </form>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid #f59e0b' }}>
+        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#f59e0b' }}>4. Advanced Engine: Trigger Match Completion</h3>
+        <p style={{ color: 'var(--border)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+          Input an upcoming or live Match ID. The engine will end the match, evaluate ALL user teams, apply <strong>Dream11 Math</strong>, distribute <strong>Relative Ranks</strong>, and permanently add points to Profiles.
         </p>
         <form action={calculateScores} style={{ display: 'flex', gap: '1rem' }}>
           <input 
@@ -60,7 +79,7 @@ export default async function AdminPage() {
             style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: '#0F172A', color: '#fff', fontSize: '1rem' }} 
           />
           <SubmitButton type="submit" className="btn-primary" style={{ background: '#f59e0b', color: '#000', padding: '0 1.5rem' }} pendingText="Simulating Match...">
-            Run Engine
+            Run Final Engine
           </SubmitButton>
         </form>
       </div>
