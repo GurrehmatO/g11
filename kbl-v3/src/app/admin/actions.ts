@@ -33,13 +33,6 @@ export async function syncMatches(formData?: FormData): Promise<void> {
       }, { onConflict: 'api_match_id' })
   }
 
-  // Auto-promote upcoming matches that have passed their start time to 'live'
-  await supabase
-    .from('matches')
-    .update({ status: 'live' })
-    .eq('status', 'upcoming')
-    .lte('match_date', new Date().toISOString())
-
   revalidatePath('/admin')
   revalidatePath('/dashboard')
 }
