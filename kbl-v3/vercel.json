@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/promote-matches",
-      "schedule": "*/5 * * * *"
+      "schedule": "1 14 * * *"
     }
   ]
 }
