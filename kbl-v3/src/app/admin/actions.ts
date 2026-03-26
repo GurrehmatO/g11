@@ -65,9 +65,29 @@ export async function syncPlayers(formData?: FormData): Promise<void> {
   revalidatePath('/dashboard')
 }
 
+export async function changeMatchStatus(matchId: string, apiMatchId: string | null, newStatus: string): Promise<void> {
+  const supabase = createAdminClient()
+
+  if (newStatus === 'completed' && apiMatchId) {
+    // Trigger the full real-data scoring pipeline
+    const fd = new FormData()
+    fd.set('matchId', matchId)
+    fd.set('apiMatchId', apiMatchId)
+    await calculateScoresFromAPI(fd)
+    return // calculateScoresFromAPI already marks as completed + revalidates
+  }
+
+  // Otherwise just flip the status
+  await supabase.from('matches').update({ status: newStatus }).eq('id', matchId)
+  revalidatePath('/admin')
+  revalidatePath('/dashboard')
+}
+
+
 export async function calculateScores(formData: FormData): Promise<void> {
   const matchId = formData.get('matchId') as string
   if (!matchId) return
+
 
   const supabase = createAdminClient()
   
