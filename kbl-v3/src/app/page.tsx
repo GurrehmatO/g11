@@ -1,9 +1,9 @@
-'use client'
-import { useState } from 'react'
-import { RulesModal } from '@/components/RulesModal'
+import { createClient } from "@/utils/supabase/server";
+import { LandingButtons } from "@/components/LandingButtons";
 
-export default function Home() {
-  const [isRulesOpen, setIsRulesOpen] = useState(false);
+export default async function Home() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '75vh', textAlign: 'center', animation: 'fadeIn 0.8s ease-out' }}>
@@ -32,16 +32,8 @@ export default function Home() {
       <p style={{ fontSize: '1.25rem', opacity: 0.8, maxWidth: '600px', marginBottom: '2.5rem', lineHeight: 1.6 }}>
         Draft your dream squad of 11. Compete against your friends with our custom automated ranking algorithm. Climb the global leaderboard.
       </p>
-      <div style={{ display: 'flex', gap: '1rem' }}>
-        <a href="/login" className="btn-primary" style={{ padding: '0.875rem 2rem', fontSize: '1.125rem' }}>
-          Draft Your Team
-        </a>
-        <button onClick={() => setIsRulesOpen(true)} className="glass-panel" style={{ border: 'none', padding: '0.875rem 2rem', fontSize: '1.125rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius)', transition: 'background-color 0.2s', cursor: 'pointer' }}>
-          Read the Rules
-        </button>
-      </div>
-
-      <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
+      
+      <LandingButtons user={user} />
     </div>
   );
 }
