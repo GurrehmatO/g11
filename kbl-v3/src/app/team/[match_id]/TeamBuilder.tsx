@@ -167,7 +167,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
           {playersList.map(p => (
             <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative' }}>
-                <PlayerAvatar playerName={p.name} size={44} />
+                <PlayerAvatar playerName={p.name} teamName={p.team} size={44} />
                 <div style={{ background: p.team === teamA ? 'var(--foreground)' : 'var(--card)', color: p.team === teamA ? 'var(--background)' : 'var(--foreground)', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
                   {p.name.split(' ').pop()}
                 </div>
@@ -273,7 +273,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                     return (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <PlayerAvatar playerName={p.name} size={44} />
+                          <PlayerAvatar playerName={p.name} teamName={p.team} size={44} />
                           <div>
                             <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--foreground)' }}>{p.name}</div>
                             <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{getRoleTab(p.role)}</div>
@@ -434,7 +434,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
             >
               {/* Avatar Box */}
               <div style={{ position: 'relative', marginRight: '1rem' }}>
-                <PlayerAvatar playerName={p.name} size={48} />
+                <PlayerAvatar playerName={p.name} teamName={p.team} size={48} />
                 <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', background: p.team === teamA ? '#1E293B' : '#65A30D', color: '#fff', fontSize: '0.55rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                   {getShortName(p.team)}
                 </div>

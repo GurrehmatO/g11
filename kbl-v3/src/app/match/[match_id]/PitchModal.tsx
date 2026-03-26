@@ -45,7 +45,7 @@ export default function PitchModal({ team, matchScores, userName, teamA }: any) 
              return (
               <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ position: 'relative' }}>
-                  <PlayerAvatar playerName={p.name} size={48} />
+                  <PlayerAvatar playerName={p.name} teamName={p.team} size={48} />
                   {isC && <div style={{ position: 'absolute', top: -4, left: -4, background: '#1E293B', color: '#fff', border: '1px solid #fff', width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 'bold' }}>C</div>}
                   {isVC && <div style={{ position: 'absolute', top: -4, left: -4, background: '#3B82F6', color: '#fff', border: '1px solid #fff', width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 'bold' }}>VC</div>}
                   
