@@ -29,6 +29,7 @@ const STATUS_OPTIONS: Record<string, string[]> = {
 function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
   const [pending, startTransition] = useTransition()
   const [confirming, setConfirming] = useState<string | null>(null)
+  const [cricbuzzUrl, setCricbuzzUrl] = useState('')
 
   const handleRequest = (newStatus: string) => {
     setConfirming(newStatus)
@@ -37,8 +38,9 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
   const handleConfirm = () => {
     if (!confirming) return
     startTransition(async () => {
-      await changeMatchStatus(match.id, match.api_match_id, confirming)
+      await changeMatchStatus(match.id, match.api_match_id, confirming, cricbuzzUrl)
       setConfirming(null)
+      setCricbuzzUrl('')
       onDone()
     })
   }
@@ -55,8 +57,15 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
       {/* Match name + date */}
       <div style={{ flex: 2, minWidth: 180 }}>
         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--foreground)', lineHeight: 1.3 }}>{match.name}</div>
-        <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2 }}>
-          {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} IST
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 2 }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+            {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} IST
+          </div>
+          {(match as any).cricbuzz_match_id && (
+            <div style={{ fontSize: '0.65rem', background: 'rgba(34, 197, 94, 0.1)', color: '#22C55E', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+              CB ID: {(match as any).cricbuzz_match_id}
+            </div>
+          )}
         </div>
       </div>
 
@@ -80,18 +89,39 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
           ))}
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.78rem', color: '#F59E0B' }}>
-            {confirming === 'completed' ? '⚠ Will score & lock. Confirm?' : `Set to ${confirming}?`}
-          </span>
-          <button onClick={handleConfirm} disabled={pending} style={{ fontSize: '0.72rem', padding: '4px 12px', borderRadius: '6px', background: confirming === 'completed' ? '#22C55E' : STATUS_COLORS[confirming], color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-            {pending ? '...' : 'Yes'}
-          </button>
-          <button onClick={() => setConfirming(null)} disabled={pending} style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '6px', background: 'transparent', border: '1px solid #64748B', color: '#94A3B8', cursor: 'pointer' }}>
-            No
-          </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', width: '100%', marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,158,11,0.2)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.78rem', color: '#F59E0B', fontWeight: 600 }}>
+              {confirming === 'completed' ? '⚠ Warning: This will score and lock the match. Are you sure?' : `Set to ${confirming}?`}
+            </span>
+            
+            {confirming === 'completed' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={{ fontSize: '0.65rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {(match as any).cricbuzz_match_id ? 'Automated Scoring Active (ID Found)' : 'Optional: Cricbuzz Scorecard URL (Manual Override)'}
+                </label>
+                <input 
+                  type="text" 
+                  value={cricbuzzUrl} 
+                  onChange={(e) => setCricbuzzUrl(e.target.value)}
+                  placeholder={(match as any).cricbuzz_match_id ? `Using saved ID: ${(match as any).cricbuzz_match_id}` : "https://www.cricbuzz.com/..."}
+                  style={{ width: '100%', background: '#0F172A', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 10px', fontSize: '0.75rem', color: '#fff' }}
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button onClick={handleConfirm} disabled={pending} style={{ fontSize: '0.72rem', padding: '6px 16px', borderRadius: '6px', background: confirming === 'completed' ? '#22C55E' : STATUS_COLORS[confirming], color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                {pending ? 'Processing...' : 'Yes, Confirm'}
+              </button>
+              <button onClick={() => { setConfirming(null); setCricbuzzUrl(''); }} disabled={pending} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: '6px', background: 'transparent', border: '1px solid #64748B', color: '#94A3B8', cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
+
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 
 const CRICAPI_KEY = process.env.CRICAPI_KEY!
 const IPL_SERIES_ID = '87c62aac-bc3c-4738-ab93-19da0690488f' // IPL 2026
+const CRICBUZZ_SERIES_ID = '9241' // IPL 2026
 
 export async function syncMatches(formData?: FormData): Promise<void> {
   const supabase = createAdminClient()
@@ -33,8 +34,92 @@ export async function syncMatches(formData?: FormData): Promise<void> {
       }, { onConflict: 'api_match_id' })
   }
 
+  // Automate Cricbuzz ID discovery after syncing
+  try {
+    await discoverCricbuzzIds()
+  } catch (err) {
+    console.error('Cricbuzz ID discovery failed:', err)
+  }
+
   revalidatePath('/admin')
   revalidatePath('/dashboard')
+}
+
+const TEAM_MAP: Record<string, string> = {
+  'Royal Challengers Bengaluru': 'rcb',
+  'Sunrisers Hyderabad': 'srh',
+  'Mumbai Indians': 'mi',
+  'Kolkata Knight Riders': 'kkr',
+  'Delhi Capitals': 'dc',
+  'Rajasthan Royals': 'rr',
+  'Punjab Kings': 'pbks',
+  'Chennai Super Kings': 'csk',
+  'Gujarat Titans': 'gt',
+  'Lucknow Super Giants': 'lsg'
+}
+
+import cricbuzzData from '@/data/cricbuzz_ids.json'
+
+export async function discoverCricbuzzIds(): Promise<void> {
+  const supabase = createAdminClient()
+  
+  // 1. Fetch matches from DB that need an update
+  const { data: dbMatches } = await supabase.from('matches').select('id, name, team_a, team_b')
+  if (!dbMatches) return
+
+  // 2. Prepare common scraper data as fallback
+  let scraperMatches: { id: string, slug: string, matchNum?: string }[] = []
+  let scraperAttempted = false
+
+  async function tryScrape() {
+    if (scraperAttempted) return
+    scraperAttempted = true
+    const url = `https://www.cricbuzz.com/cricket-series/${CRICBUZZ_SERIES_ID}/indian-premier-league-2026/matches`
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' })
+    if (!res.ok) return
+    const html = await res.text()
+    const matchRegex = /\/(\d+)\/([a-z0-9-]+-indian-premier-league-2026[^"]*)/g
+    let m
+    while ((m = matchRegex.exec(html)) !== null) {
+      const id = m[1]
+      const slug = m[2]
+      const numMatch = slug.match(/(\d+)(st|nd|rd|th)-match/)
+      scraperMatches.push({ id, slug, matchNum: numMatch ? numMatch[1] : undefined })
+    }
+  }
+
+  for (const match of dbMatches) {
+    // Extract match number: "1st Match", "2nd Match" etc.
+    const dbMatchNum = match.name.match(/(\d+)(st|nd|rd|th)\s+Match/i)
+    const targetNum = dbMatchNum ? dbMatchNum[1] : undefined
+    
+    let foundId: string | null = null
+
+    // Method A: Check hardcoded/pre-mapped data (Guaranteed for regular season)
+    if (targetNum && (cricbuzzData as any)[targetNum]) {
+      foundId = (cricbuzzData as any)[targetNum].id
+    }
+
+    // Method B: Fallback to dynamic scraper (Useful for playoffs or if JSON is outdated)
+    if (!foundId) {
+      await tryScrape()
+      const tA = TEAM_MAP[match.team_a]
+      const tB = TEAM_MAP[match.team_b]
+      if (tA && tB) {
+        const found = scraperMatches.find(cm => {
+          if (targetNum && cm.matchNum && targetNum !== cm.matchNum) return false
+          const slugParts = cm.slug.split('-')
+          return slugParts.includes(tA) && slugParts.includes(tB)
+        })
+        if (found) foundId = found.id
+      }
+    }
+
+    if (foundId) {
+      await supabase.from('matches').update({ cricbuzz_match_id: foundId }).eq('id', match.id)
+      console.log(`Linked Match ${match.id} (${match.name}) with CB ID ${foundId}`)
+    }
+  }
 }
 
 export async function syncPlayers(formData?: FormData): Promise<void> {
@@ -65,19 +150,35 @@ export async function syncPlayers(formData?: FormData): Promise<void> {
   revalidatePath('/dashboard')
 }
 
-export async function changeMatchStatus(matchId: string, apiMatchId: string | null, newStatus: string): Promise<void> {
+export async function changeMatchStatus(matchId: string, apiMatchId: string | null, newStatus: string, cricbuzzUrl?: string): Promise<void> {
   const supabase = createAdminClient()
 
   // Always update the status first
   await supabase.from('matches').update({ status: newStatus }).eq('id', matchId)
 
   // If completing, attempt real-data scoring as a best-effort step
-  if (newStatus === 'completed' && apiMatchId) {
+  if (newStatus === 'completed') {
     try {
-      const fd = new FormData()
-      fd.set('matchId', matchId)
-      fd.set('apiMatchId', apiMatchId)
-      await calculateScoresFromAPI(fd)
+      let finalUrl = cricbuzzUrl
+
+      // If no URL provided, try to find the saved Cricbuzz ID
+      if (!finalUrl) {
+        const { data: m } = await supabase.from('matches').select('cricbuzz_match_id').eq('id', matchId).single()
+        if (m?.cricbuzz_match_id) {
+          finalUrl = `https://www.cricbuzz.com/live-cricket-scorecard/${m.cricbuzz_match_id}`
+        }
+      }
+
+      if (finalUrl) {
+        // Use Cricbuzz scraper
+        await calculateScoresFromCricbuzz(matchId, finalUrl)
+      } else if (apiMatchId) {
+        // Fallback to CricAPI
+        const fd = new FormData()
+        fd.set('matchId', matchId)
+        fd.set('apiMatchId', apiMatchId)
+        await calculateScoresFromAPI(fd)
+      }
     } catch (err) {
       console.error('Scoring pipeline error (match still marked completed):', err)
     }
@@ -480,3 +581,147 @@ export async function calculateScoresFromAPI(formData: FormData): Promise<void> 
   revalidatePath('/dashboard')
 }
 
+
+// ─── Cricbuzz Scorecard Scraper & Scoring Pipeline ────────────────────────────
+export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: string): Promise<{ success: boolean; error?: string }> {
+  if (!matchId || !cricbuzzUrl) return { success: false, error: 'Missing matchId or cricbuzzUrl' }
+
+  const supabase = createAdminClient()
+
+  // 1. Fetch Cricbuzz page HTML
+  const res = await fetch(cricbuzzUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    cache: 'no-store'
+  })
+  if (!res.ok) return { success: false, error: `Cricbuzz HTTP error: ${res.status}` }
+  const html = await res.text()
+
+  // 2. Extract batting data from embedded JSON
+  const batRegex = /\\?"batId\\?":\s*(\d+)\s*,\s*\\?"batName\\?":\s*\\?"([^"\\]+)\\?"[^}]*?\\?"runs\\?":\s*(\d+)\s*,\s*\\?"balls\\?":\s*(\d+)\s*,\s*\\?"dots\\?":\s*\d+\s*,\s*\\?"fours\\?":\s*(\d+)\s*,\s*\\?"sixes\\?":\s*(\d+)[^}]*?\\?"strikeRate\\?":\s*([\d.]+)\s*,\s*\\?"outDesc\\?":\s*\\?"([^"\\]*)\\?"[^}]*?\\?"wicketCode\\?":\s*\\?"([^"\\]*)\\?"/g
+
+  const playerStats: Record<string, { name: string; runs: number; balls: number; fours: number; sixes: number; isDuck: boolean; wickets: number; maidens: number; runsConceded: number; overs: number; catches: number }> = {}
+
+  const ensure = (name: string) => {
+    const key = normName(name)
+    if (!playerStats[key]) playerStats[key] = { name, runs: 0, balls: 0, fours: 0, sixes: 0, isDuck: false, wickets: 0, maidens: 0, runsConceded: 0, overs: 0, catches: 0 }
+    return playerStats[key]
+  }
+
+  let m
+  while ((m = batRegex.exec(html)) !== null) {
+    const s = ensure(m[2])
+    s.runs += parseInt(m[3])
+    s.balls += parseInt(m[4])
+    s.fours += parseInt(m[5])
+    s.sixes += parseInt(m[6])
+    if (parseInt(m[3]) === 0 && parseInt(m[4]) > 0 && m[9] !== '') s.isDuck = true
+  }
+
+  // 3. Extract bowling data
+  const bowlRegex = /\\?"bowlerId\\?":\s*\d+\s*,\s*\\?"bowlName\\?":\s*\\?"([^"\\]+)\\?"[^}]*?\\?"overs\\?":\s*([\d.]+)\s*,\s*\\?"maidens\\?":\s*(\d+)\s*,\s*\\?"runs\\?":\s*(\d+)\s*,\s*\\?"wickets\\?":\s*(\d+)\s*,\s*\\?"economy\\?":\s*([\d.]+)/g
+
+  while ((m = bowlRegex.exec(html)) !== null) {
+    const s = ensure(m[1])
+    s.overs += parseFloat(m[2])
+    s.maidens += parseInt(m[3])
+    s.runsConceded += parseInt(m[4])
+    s.wickets += parseInt(m[5])
+  }
+
+  // 4. Extract catches from dismissal descriptions
+  const catchRegex = /\\?"outDesc\\?":\s*\\?"c ([^"\\]+?) b [^"\\]+\\?"/g
+  while ((m = catchRegex.exec(html)) !== null) {
+    const catcherName = m[1].trim()
+    const s = ensure(catcherName)
+    s.catches++
+  }
+
+  const statsCount = Object.keys(playerStats).length
+  if (statsCount === 0) return { success: false, error: 'No scorecard data found on the page. Is the URL correct?' }
+
+  // 5. Load our DB players for this match and match by name
+  const { data: matchData } = await supabase.from('matches').select('team_a, team_b').eq('id', matchId).single()
+  if (!matchData) return { success: false, error: 'Match not found in database' }
+
+  const { data: dbPlayers } = await supabase.from('players').select('id, name').in('team', [matchData.team_a, matchData.team_b])
+  if (!dbPlayers) return { success: false, error: 'No players found for this match' }
+
+  // 6. Fuzzy-match DB players to scraped stats and compute fantasy points
+  const playerBasePoints: Record<string, number> = {}
+
+  for (const dbP of dbPlayers) {
+    const normDb = normName(dbP.name)
+    const lastDb = normDb.split(' ').pop() || ''
+
+    // Find matching scraped player
+    let matched: typeof playerStats[string] | null = null
+    for (const [key, stats] of Object.entries(playerStats)) {
+      const lastScraped = key.split(' ').pop() || ''
+      if (key === normDb || lastScraped === lastDb) { matched = stats; break }
+    }
+
+    let pts = 4 // in-lineup bonus
+    if (matched) {
+      pts += battingPoints(matched.runs, matched.balls, matched.fours, matched.sixes, matched.isDuck)
+      pts += bowlingPoints(matched.wickets, matched.maidens, matched.runsConceded, matched.overs)
+      pts += matched.catches * 8
+    }
+
+    playerBasePoints[dbP.id] = pts
+    await supabase.from('player_scores').upsert({
+      match_id: matchId, player_id: dbP.id, points: pts
+    }, { onConflict: 'match_id,player_id' })
+  }
+
+  // 7. Calculate raw team scores and rankings (same as CricAPI pipeline)
+  const { data: userTeams } = await supabase
+    .from('user_teams')
+    .select('id, user_id, captain_id, vice_captain_id, user_team_players(player_id)')
+    .eq('match_id', matchId)
+  if (!userTeams || userTeams.length === 0) return { success: false, error: 'No user teams found for this match' }
+
+  const userRankings: { userId: string, rawScore: number }[] = []
+  for (const ut of userTeams) {
+    let rawScore = 0
+    const selectedIds = ut.user_team_players.map((utp: any) => utp.player_id)
+    for (const pid of selectedIds) {
+      let pt = playerBasePoints[pid] || 0
+      if (pid === ut.captain_id) pt *= 2
+      else if (pid === ut.vice_captain_id) pt *= 1.5
+      rawScore += pt
+    }
+    rawScore = Math.round(rawScore * 10) / 10
+    userRankings.push({ userId: ut.user_id, rawScore })
+  }
+
+  // 8. Relative rank tie-breaker
+  userRankings.sort((a, b) => b.rawScore - a.rawScore)
+  const N = userRankings.length
+  if (N > 0) {
+    let currentRank = 1
+    while (currentRank <= N) {
+      let tieCount = 1
+      const score = userRankings[currentRank - 1].rawScore
+      while (currentRank - 1 + tieCount < N && userRankings[currentRank - 1 + tieCount].rawScore === score) tieCount++
+
+      let total = 0
+      for (let i = 0; i < tieCount; i++) total += N - (currentRank - 1 + i)
+      const avg = total / tieCount
+
+      for (let i = 0; i < tieCount; i++) {
+        const u = userRankings[currentRank - 1 + i]
+        await supabase.from('user_match_ranks').upsert({
+          user_id: u.userId, match_id: matchId,
+          raw_score: u.rawScore, relative_rank: currentRank, relative_points: avg
+        }, { onConflict: 'user_id,match_id' })
+        const { data: prof } = await supabase.from('profiles').select('total_points').eq('id', u.userId).single()
+        await supabase.from('profiles').update({ total_points: (prof?.total_points || 0) + avg }).eq('id', u.userId)
+      }
+      currentRank += tieCount
+    }
+  }
+
+  revalidatePath('/admin')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
