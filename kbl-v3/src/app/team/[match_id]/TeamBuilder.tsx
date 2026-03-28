@@ -202,11 +202,11 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
         </div>
 
         {/* CSS Field */}
-        <div style={{ 
-          flex: 1, 
+        <div style={{
+          flex: 1,
           background: '#34A853',
           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,0,0,0.06) 40px, rgba(0,0,0,0.06) 80px)',
-          position: 'relative', 
+          position: 'relative',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -217,7 +217,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
           <div style={{ position: 'absolute', top: '15%', left: '5%', right: '5%', bottom: '15%', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '100px / 200px', zIndex: 1 }} />
           {/* Pitch Area */}
           <div style={{ position: 'absolute', top: '35%', left: '38%', right: '38%', height: '30%', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255,255,255,0.15)', zIndex: 1 }} />
-          
+
           <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-around' }}>
             {renderPreviewRow('WICKET-KEEPERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'WK'))}
             {renderPreviewRow('BATTERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'BAT'))}
@@ -244,7 +244,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
         {/* List */}
         <div style={{ flex: 1, overflowY: 'auto', background: 'var(--background)', paddingBottom: '90px' }}>
           {error && <div style={{ color: 'red', background: '#FEE2E2', padding: '0.75rem', fontSize: '0.875rem', textAlign: 'center' }}>{error}</div>}
-          
+
           <div style={{ display: 'flex', background: 'var(--card)', padding: '0.5rem 1rem', fontSize: '0.75rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ flex: 1 }}>PLAYER</div>
             <div style={{ width: '40px', textAlign: 'center' }}>% C BY</div>
@@ -255,10 +255,10 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
             {['WK', 'BAT', 'AR', 'BOWL'].map(roleKey => {
               const rolePlayers = selectedPlayers
                 .filter((p: any) => getRoleTab(p.role) === roleKey)
-                .sort((a: any, b: any) => getDeterministicNum(b.id, 0, 300) - getDeterministicNum(a.id, 0, 300));
-                
+                .sort((a: any, b: any) => (b.totalPoints || 0) - (a.totalPoints || 0));
+
               if (rolePlayers.length === 0) return null;
-              
+
               const sectionTitle = roleKey === 'WK' ? 'WICKET-KEEPERS' : roleKey === 'BAT' ? 'BATTERS' : roleKey === 'AR' ? 'ALL-ROUNDERS' : 'BOWLERS';
 
               return (
@@ -269,7 +269,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                   {rolePlayers.map((p: any) => {
                     const isC = captainId === p.id;
                     const isVC = viceCaptainId === p.id;
-                    
+
                     return (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -279,15 +279,15 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                             <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{getRoleTab(p.role)}</div>
                           </div>
                         </div>
-                        
+
                         <div style={{ display: 'flex', gap: '1rem' }}>
-                          <button 
-                            onClick={() => { setCaptainId(p.id); if(viceCaptainId === p.id) setViceCaptainId(''); }}
+                          <button
+                            onClick={() => { setCaptainId(p.id); if (viceCaptainId === p.id) setViceCaptainId(''); }}
                             style={{ width: 36, height: 36, borderRadius: '50%', background: isC ? 'var(--primary)' : 'var(--card)', color: isC ? '#fff' : 'var(--foreground)', border: '1px solid', borderColor: isC ? 'var(--primary)' : 'var(--border)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >C</button>
-                          
-                          <button 
-                            onClick={() => { setViceCaptainId(p.id); if(captainId === p.id) setCaptainId(''); }}
+
+                          <button
+                            onClick={() => { setViceCaptainId(p.id); if (captainId === p.id) setCaptainId(''); }}
                             style={{ width: 36, height: 36, borderRadius: '50%', background: isVC ? 'var(--accent)' : 'var(--card)', color: isVC ? '#fff' : 'var(--foreground)', border: '1px solid', borderColor: isVC ? 'var(--accent)' : 'var(--border)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >VC</button>
                         </div>
@@ -302,7 +302,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
         {/* Sticky Fixed Bottom Bar Container */}
         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
-          <button 
+          <button
             disabled={loading || !captainId || !viceCaptainId}
             onClick={handleSave}
             style={{ flex: 1, background: '#22C55E', color: '#fff', border: 'none', padding: '1rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '1rem', opacity: (!captainId || !viceCaptainId || loading) ? 0.5 : 1, transition: '0.2s' }}
@@ -316,134 +316,134 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', background: 'var(--background)', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', position: 'relative' }}>
-      
+
       {/* ---------- STICKY TOP VIEWPORT ENCLOSURE ---------- */}
       <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'var(--background)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-      
+
         {/* Top Dark Section */}
-      <div style={{ background: 'linear-gradient(180deg, #1A0B1A 0%, #111420 100%)', color: 'white', padding: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <ChevronLeft size={24} onClick={() => window.history.back()} style={{ cursor: 'pointer' }} />
-            <div>
-              <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 600 }}>Create Team</h2>
-              <div style={{ fontSize: '0.8rem', color: '#aaa' }}>{timeLeft || 'Calculating...'}</div>
+        <div style={{ background: 'linear-gradient(180deg, #1A0B1A 0%, #111420 100%)', color: 'white', padding: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <ChevronLeft size={24} onClick={() => window.history.back()} style={{ cursor: 'pointer' }} />
+              <div>
+                <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 600 }}>Create Team</h2>
+                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>{timeLeft || 'Calculating...'}</div>
+              </div>
+            </div>
+            <button onClick={() => setIsRulesOpen(true)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 'bold', color: 'var(--foreground)', cursor: 'pointer' }}>PTS</button>
+          </div>
+
+          {/* Team Score Display */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <TeamLogo teamName={teamA} size={36} />
+              <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{shortA}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{countA}</span>
+              <span style={{ fontSize: '1.25rem', color: '#71717A', fontWeight: 300 }}>-</span>
+              <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{countB}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{shortB}</span>
+              <TeamLogo teamName={teamB} size={36} />
             </div>
           </div>
-          <button onClick={() => setIsRulesOpen(true)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 'bold', color: 'var(--foreground)', cursor: 'pointer' }}>PTS</button>
-        </div>
 
-        {/* Team Score Display */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <TeamLogo teamName={teamA} size={36} />
-            <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{shortA}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{countA}</span>
-            <span style={{ fontSize: '1.25rem', color: '#71717A', fontWeight: 300 }}>-</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{countB}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{shortB}</span>
-            <TeamLogo teamName={teamB} size={36} />
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', width: '30px' }}>{selectedIds.size}/11</span>
-          <div style={{ display: 'flex', gap: '3px', flex: 1 }}>
-            {Array.from({ length: 11 }).map((_, i) => (
-              <div key={i} style={{ 
-                height: '6px', 
-                flex: 1, 
-                background: i < selectedIds.size ? '#22C55E' : '#334155',
-                transform: 'skewX(-20deg)', 
-                borderRadius: '1px',
-                transition: 'background 0.3s'
-              }} />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', background: 'var(--card)', color: 'var(--foreground)', borderBottom: '1px solid var(--border)' }}>
-        {['WK', 'BAT', 'AR', 'BOWL'].map(tab => {
-          const countInTab = Array.from(selectedIds).filter(id => {
-            const p = players.find((x: any) => x.id === id)
-            return p && getRoleTab(p.role) === tab
-          }).length;
-          
-          return (
-            <div 
-              key={tab} 
-              onClick={() => setActiveTab(tab)}
-              style={{ 
-                flex: 1, 
-                textAlign: 'center', 
-                padding: '1rem 0', 
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                color: activeTab === tab ? '#DC2626' : '#64748B',
-                borderBottom: activeTab === tab ? '3px solid #DC2626' : '3px solid transparent',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              {tab} {countInTab > 0 && `(${countInTab})`}
+          {/* Progress Bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', width: '30px' }}>{selectedIds.size}/11</span>
+            <div style={{ display: 'flex', gap: '3px', flex: 1 }}>
+              {Array.from({ length: 11 }).map((_, i) => (
+                <div key={i} style={{
+                  height: '6px',
+                  flex: 1,
+                  background: i < selectedIds.size ? '#22C55E' : '#334155',
+                  transform: 'skewX(-20deg)',
+                  borderRadius: '1px',
+                  transition: 'background 0.3s'
+                }} />
+              ))}
             </div>
-          )
-        })}
-      </div>
+          </div>
+        </div>
 
-      {/* Player List Headers */}
-      <div style={{ display: 'flex', background: 'var(--card)', padding: '0.5rem 1rem', fontSize: '0.7rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid var(--border)', textTransform: 'uppercase' }}>
-        <div style={{ width: '50%' }}>PLAYER</div>
-        <div style={{ width: '35%', textAlign: 'center' }}>POINTS</div>
-        <div style={{ width: '15%', textAlign: 'center' }}></div>
-      </div>
+        {/* Tabs */}
+        <div style={{ display: 'flex', background: 'var(--card)', color: 'var(--foreground)', borderBottom: '1px solid var(--border)' }}>
+          {['WK', 'BAT', 'AR', 'BOWL'].map(tab => {
+            const countInTab = Array.from(selectedIds).filter(id => {
+              const p = players.find((x: any) => x.id === id)
+              return p && getRoleTab(p.role) === tab
+            }).length;
+
+            return (
+              <div
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  padding: '1rem 0',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: activeTab === tab ? '#DC2626' : '#64748B',
+                  borderBottom: activeTab === tab ? '3px solid #DC2626' : '3px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {tab} {countInTab > 0 && `(${countInTab})`}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Player List Headers */}
+        <div style={{ display: 'flex', background: 'var(--card)', padding: '0.5rem 1rem', fontSize: '0.7rem', color: '#64748B', fontWeight: 600, borderBottom: '1px solid var(--border)', textTransform: 'uppercase' }}>
+          <div style={{ width: '50%' }}>PLAYER</div>
+          <div style={{ width: '35%', textAlign: 'center' }}>POINTS</div>
+          <div style={{ width: '15%', textAlign: 'center' }}></div>
+        </div>
       </div>
 
       {/* Player List Main Area */}
       <div style={{ flex: 1, paddingBottom: '100px' }}>
         {players
           .filter((p: any) => getRoleTab(p.role) === activeTab)
-          .sort((a: any, b: any) => getDeterministicNum(b.id, 0, 300) - getDeterministicNum(a.id, 0, 300))
+          .sort((a: any, b: any) => (b.totalPoints || 0) - (a.totalPoints || 0))
           .map((p: any) => {
-          const isSelected = selectedIds.has(p.id)
-          const disabled = isPlayerDisabled(p)
-          return (
-            <div 
-              key={p.id}
-              onClick={() => {
-                if (disabled) handleDisabledClick(p);
-                else togglePlayer(p.id);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '1rem',
-                borderBottom: '1px solid var(--border)',
-                background: isSelected ? 'rgba(34, 197, 94, 0.1)' : 'var(--card)',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                transition: 'background 0.2s',
-                opacity: disabled && !isSelected ? 0.4 : 1
-              }}
-            >
-              {/* Avatar Box */}
-              <div style={{ position: 'relative', marginRight: '1rem' }}>
-                <PlayerAvatar playerName={p.name} teamName={p.team} size={48} />
-                <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', background: p.team === teamA ? '#1E293B' : '#65A30D', color: '#fff', fontSize: '0.55rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                  {getShortName(p.team)}
+            const isSelected = selectedIds.has(p.id)
+            const disabled = isPlayerDisabled(p)
+            return (
+              <div
+                key={p.id}
+                onClick={() => {
+                  if (disabled) handleDisabledClick(p);
+                  else togglePlayer(p.id);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '1rem',
+                  borderBottom: '1px solid var(--border)',
+                  background: isSelected ? 'rgba(34, 197, 94, 0.1)' : 'var(--card)',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s',
+                  opacity: disabled && !isSelected ? 0.4 : 1
+                }}
+              >
+                {/* Avatar Box */}
+                <div style={{ position: 'relative', marginRight: '1rem' }}>
+                  <PlayerAvatar playerName={p.name} teamName={p.team} size={48} />
+                  <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', background: p.team === teamA ? '#1E293B' : '#65A30D', color: '#fff', fontSize: '0.55rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    {getShortName(p.team)}
+                  </div>
+                  <div style={{ position: 'absolute', top: -2, left: -2, background: '#fff', borderRadius: '50%', display: 'flex' }}>
+                    <Info size={14} color="#94A3B8" />
+                  </div>
                 </div>
-                <div style={{ position: 'absolute', top: -2, left: -2, background: '#fff', borderRadius: '50%', display: 'flex' }}>
-                  <Info size={14} color="#94A3B8" />
-                </div>
-              </div>
 
-              {/* Player textual Info */}
+                {/* Player textual Info */}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>{p.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#3B82F6', marginTop: '4px', fontWeight: 500 }}>
@@ -454,28 +454,29 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
               {/* Points */}
               <div style={{ width: '35%', textAlign: 'center', fontSize: '0.95rem', color: 'var(--foreground)', fontWeight: 600, opacity: 0.9 }}>
-                {getDeterministicNum(p.id, 0, 300)}
+                {p.totalPoints !== undefined ? p.totalPoints : '-'}
               </div>
 
-              {/* Selection Button */}
-              <div style={{ width: '15%', display: 'flex', justifyContent: 'flex-end', paddingLeft: '0.5rem' }}>
-                {isSelected ? (
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F97316' }}>
-                    <Minus size={16} strokeWidth={3} />
+                  {/* Selection Button */}
+                  <div style={{ width: '15%', display: 'flex', justifyContent: 'flex-end', paddingLeft: '0.5rem' }}>
+                    {isSelected ? (
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F97316' }}>
+                        <Minus size={16} strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22C55E' }}>
+                        <Plus size={16} strokeWidth={3} />
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22C55E' }}>
-                    <Plus size={16} strokeWidth={3} />
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
-        {error && <div style={{ color: 'red', textAlign: 'center', padding: '1rem', fontSize: '0.875rem' }}>{error}</div>}
-      </div>
+                </div>
+              )
+            })}
 
-      {/* Sticky Fixed Bottom Area */}
+          {error && <div style={{ color: 'red', textAlign: 'center', padding: '1rem', fontSize: '0.875rem' }}>{error}</div>}
+        </div>
+
+      {/* Sticky Fixed Bottom Area */ }
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', zIndex: 50 }}>
         <button 
           onClick={() => setStep('preview')}
@@ -493,5 +494,5 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
 
       <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
     </div>
-  )
+      )
 }

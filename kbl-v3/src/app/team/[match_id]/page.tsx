@@ -37,12 +37,30 @@ export default async function TeamPage(props: { params: Promise<{ match_id: stri
     .in('team', [match.team_a, match.team_b])
     .order('credits', { ascending: false })
 
+  // Fetch seasonal points for these players
+  const playerIds = players?.map(p => p.id) || []
+  const { data: allScores } = await supabase
+    .from('player_scores')
+    .select('player_id, points')
+    .in('player_id', playerIds)
+
+  // Map scores to player objects
+  const scoreMap: Record<string, number> = {}
+  allScores?.forEach(s => {
+    scoreMap[s.player_id] = (scoreMap[s.player_id] || 0) + s.points
+  })
+
+  const playersWithPoints = players?.map(p => ({
+    ...p,
+    totalPoints: scoreMap[p.id] // undefined if no scores found
+  }))
+
   // Pass match object fully to client
   return (
     <div style={{ margin: 0, padding: 0, animation: 'fadeIn 0.3s ease', minHeight: '100vh', background: '#000' }}>
       <TeamBuilder 
         matchId={match.id} 
-        players={players || []} 
+        players={playersWithPoints || []} 
         matchInfo={match}
         existingTeam={existingTeam} 
       />
