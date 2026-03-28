@@ -25,13 +25,15 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
         .order('relative_rank', { ascending: true })
     : { data: null }
 
-  // For live matches: get all user_teams (unranked, just showing who's in)
-  const { data: liveEntries } = isLive
+  // For live matches OR completed without ranks: get all user_teams (unranked)
+  const { data: liveEntries } = (isLive || isCompleted)
     ? await supabase
         .from('user_teams')
         .select('user_id, captain_id, vice_captain_id, profiles(display_name, email, id), user_team_players(players(id, name, role, team))')
         .eq('match_id', params.match_id)
     : { data: null }
+
+  const hasRanks = ranks && ranks.length > 0
 
   // Fetch full team players and scores for the pitch modal
   const { data: userTeams } = await supabase
@@ -95,8 +97,8 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
       </h2>
       
       <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-        {/* ─── COMPLETED: Ranked leaderboard ─── */}
-        {isCompleted && (
+        {/* ─── COMPLETED WITH RANKS: Ranked leaderboard ─── */}
+        {isCompleted && hasRanks && (
           <>
             <div className="match-lb-header" style={{ display: 'flex', padding: '1rem', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>
               <div style={{ width: '60px', textAlign: 'center' }}>Rank</div>
@@ -105,7 +107,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
               <div style={{ width: '120px', textAlign: 'right' }}>Match Points</div>
             </div>
             
-            {ranks && ranks.length > 0 ? ranks.map((r: any, idx: number) => {
+            {ranks!.map((r: any, idx: number) => {
               const isYou = r.profiles.id === user.id;
               return (
                 <div key={idx} className="match-lb-row" style={{ display: 'flex', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', alignItems: 'center', background: isYou ? 'rgba(34, 197, 94, 0.1)' : 'transparent' }}>
@@ -144,20 +146,25 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
                   </div>
                 </div>
               )
-            }) : (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8' }}>No teams were submitted for this match.</div>
-            )}
+            })}
           </>
         )}
 
-        {/* ─── LIVE: Unranked participant list ─── */}
-        {isLive && (
+
+        {/* ─── LIVE or COMPLETED WITHOUT RANKS: Unranked participant list ─── */}
+        {(isLive || (isCompleted && !hasRanks)) && (
           <>
             <div style={{ display: 'flex', padding: '1rem', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>
               <div style={{ width: '40px', textAlign: 'center' }}>#</div>
               <div style={{ flex: 1 }}>Player</div>
-              <div style={{ width: '80px', textAlign: 'right' }}>Team</div>
+              <div style={{ width: '100px', textAlign: 'right' }}>Status</div>
             </div>
+            
+            {isCompleted && !hasRanks && (
+              <div style={{ padding: '0.75rem 1rem', background: 'rgba(245, 158, 11, 0.1)', borderBottom: '1px solid rgba(245, 158, 11, 0.2)', fontSize: '0.8rem', color: '#F59E0B', textAlign: 'center' }}>
+                ⏳ Scores are being calculated. Rankings will appear shortly.
+              </div>
+            )}
             
             {liveEntries && liveEntries.length > 0 ? liveEntries.map((entry: any, idx: number) => {
               const profile = entry.profiles
@@ -184,9 +191,9 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
                       </div>
                     </div>
                   </div>
-                  <div style={{ width: '80px', textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#EF4444', fontWeight: 600, border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
-                      ● Live
+                  <div style={{ width: '100px', textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.75rem', color: isLive ? '#EF4444' : '#F59E0B', fontWeight: 600, border: `1px solid ${isLive ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`, padding: '2px 8px', borderRadius: '4px' }}>
+                      {isLive ? '● Live' : '⏳ Pending'}
                     </span>
                   </div>
                 </div>
