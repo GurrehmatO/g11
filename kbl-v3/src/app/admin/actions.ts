@@ -68,17 +68,21 @@ export async function syncPlayers(formData?: FormData): Promise<void> {
 export async function changeMatchStatus(matchId: string, apiMatchId: string | null, newStatus: string): Promise<void> {
   const supabase = createAdminClient()
 
+  // Always update the status first
+  await supabase.from('matches').update({ status: newStatus }).eq('id', matchId)
+
+  // If completing, attempt real-data scoring as a best-effort step
   if (newStatus === 'completed' && apiMatchId) {
-    // Trigger the full real-data scoring pipeline
-    const fd = new FormData()
-    fd.set('matchId', matchId)
-    fd.set('apiMatchId', apiMatchId)
-    await calculateScoresFromAPI(fd)
-    return // calculateScoresFromAPI already marks as completed + revalidates
+    try {
+      const fd = new FormData()
+      fd.set('matchId', matchId)
+      fd.set('apiMatchId', apiMatchId)
+      await calculateScoresFromAPI(fd)
+    } catch (err) {
+      console.error('Scoring pipeline error (match still marked completed):', err)
+    }
   }
 
-  // Otherwise just flip the status
-  await supabase.from('matches').update({ status: newStatus }).eq('id', matchId)
   revalidatePath('/admin')
   revalidatePath('/dashboard')
 }
