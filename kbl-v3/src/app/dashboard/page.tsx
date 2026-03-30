@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     .from('profiles')
     .select('id, display_name, email, total_points')
     .order('total_points', { ascending: false })
-    .limit(10)
+    .limit(15)
 
   return (
     <div className="page-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem', animation: 'fadeIn 0.5s ease' }}>
