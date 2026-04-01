@@ -697,28 +697,27 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
   const { data: matchData } = await supabase.from('matches').select('team_a, team_b').eq('id', matchId).single()
   if (!matchData) return { success: false, error: 'Match not found in database' }
 
-  const { data: dbPlayers } = await supabase.from('players').select('id, name').in('team', [matchData.team_a, matchData.team_b])
+  // Select 'cricbuzz_name' to allow explicit exact matching overrides
+  const { data: dbPlayers } = await supabase.from('players').select('id, name, cricbuzz_name').in('team', [matchData.team_a, matchData.team_b])
   if (!dbPlayers) return { success: false, error: 'No players found for this match' }
 
-  // 6. Fuzzy-match DB players to scraped stats and compute fantasy points
+  // 6. Exact-match DB players to scraped stats and compute fantasy points
   const playerBasePoints: Record<string, number> = {}
 
   for (const dbP of dbPlayers) {
     const normDb = normName(dbP.name)
-    const lastDb = normDb.split(' ').pop() || ''
+    const dbNameMatch = dbP.cricbuzz_name ? normName(dbP.cricbuzz_name) : normDb
 
-    // Check if player is an active player (Playing 11 + Impact Player)
+    // Check if player is an active player (Playing 11 + Impact Player) using Exact Matches
     let isActive = false
     for (const actP of Array.from(activePlayers)) {
-      const lastAct = actP.split(' ').pop() || ''
-      if (actP === normDb || lastAct === lastDb) { isActive = true; break }
+      if (actP === dbNameMatch || actP === normDb) { isActive = true; break }
     }
 
-    // Find matching scraped player stats
+    // Find matching scraped player stats using Exact Matches
     let matched: typeof playerStats[string] | null = null
     for (const [key, stats] of Object.entries(playerStats)) {
-      const lastScraped = key.split(' ').pop() || ''
-      if (key === normDb || lastScraped === lastDb) { matched = stats; break }
+      if (key === dbNameMatch || key === normDb) { matched = stats; break }
     }
 
     let pts = isActive ? 4 : 0 // in-lineup bonus
