@@ -283,7 +283,11 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                           <PlayerAvatar playerName={p.name} teamName={p.team} size={44} />
                           <div>
                             <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--foreground)' }}>{p.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{getRoleTab(p.role)}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                              <span>{getRoleTab(p.role)}</span>
+                              <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#64748B', opacity: 0.5 }}></span>
+                              <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{p.totalPoints || 0} pts</span>
+                            </div>
                           </div>
                         </div>
 
