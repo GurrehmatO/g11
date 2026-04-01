@@ -165,16 +165,22 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', zIndex: 2 }}>
         <div style={{ fontSize: '0.65rem', color: '#fff', opacity: 0.9, letterSpacing: '1px', marginBottom: '0.5rem', fontWeight: 600 }}>{title}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem 0.5rem', width: '100%', padding: '0 0.5rem' }}>
-          {playersList.map(p => (
+          {playersList.map(p => {
+            const nameParts = p.name.trim().split(' ');
+            const lastName = nameParts.length > 1 ? nameParts.pop() : '';
+            const firstLines = nameParts.join(' ');
+            
+            return (
             <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <PlayerAvatar playerName={p.name} teamName={p.team} size={44} />
-                <div style={{ background: p.team === teamA ? 'var(--foreground)' : 'var(--card)', color: p.team === teamA ? 'var(--background)' : 'var(--foreground)', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-                  {p.name.split(' ').pop()}
+                <div style={{ background: p.team === teamA ? 'var(--foreground)' : 'var(--card)', color: p.team === teamA ? 'var(--background)' : 'var(--foreground)', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', lineHeight: '1.1' }}>
+                  {firstLines && <div style={{ fontSize: '0.55rem', opacity: 0.9 }}>{firstLines}</div>}
+                  <div>{lastName || p.name}</div>
                 </div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     )

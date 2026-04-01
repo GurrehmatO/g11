@@ -42,17 +42,22 @@ export default function PitchModal({ team, matchScores, userName, teamA }: any) 
              const basePoints = matchScores[p.id] || 0;
              const finalPts = isC ? basePoints * 2 : isVC ? basePoints * 1.5 : basePoints;
 
+             const nameParts = p.name.trim().split(' ');
+             const lastName = nameParts.length > 1 ? nameParts.pop() : '';
+             const firstLines = nameParts.join(' ');
+
              return (
               <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <PlayerAvatar playerName={p.name} teamName={p.team} size={48} />
                   {isC && <div style={{ position: 'absolute', top: -4, left: -4, background: '#1E293B', color: '#fff', border: '1px solid #fff', width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 'bold' }}>C</div>}
                   {isVC && <div style={{ position: 'absolute', top: -4, left: -4, background: '#3B82F6', color: '#fff', border: '1px solid #fff', width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 'bold' }}>VC</div>}
                   
-                  <div style={{ background: p.team === teamA ? 'var(--foreground)' : 'var(--card)', color: p.team === teamA ? 'var(--background)' : 'var(--foreground)', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-                    {p.name.split(' ').pop()}
+                  <div style={{ background: p.team === teamA ? 'var(--foreground)' : 'var(--card)', color: p.team === teamA ? 'var(--background)' : 'var(--foreground)', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap', minWidth: '55px', textAlign: 'center', marginTop: '-8px', position: 'relative', zIndex: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', lineHeight: '1.1' }}>
+                    {firstLines && <div style={{ fontSize: '0.55rem', opacity: 0.9 }}>{firstLines}</div>}
+                    <div>{lastName || p.name}</div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--foreground)', fontWeight: 'bold', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '4px', textAlign: 'center', marginTop: '4px', padding: '1px 0' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--foreground)', fontWeight: 'bold', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '4px', textAlign: 'center', marginTop: '4px', padding: '1px 0', width: '100%' }}>
                      {finalPts} pts
                   </div>
                 </div>
