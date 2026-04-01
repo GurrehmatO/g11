@@ -262,7 +262,12 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
             {['WK', 'BAT', 'AR', 'BOWL'].map(roleKey => {
               const rolePlayers = selectedPlayers
                 .filter((p: any) => getRoleTab(p.role) === roleKey)
-                .sort((a: any, b: any) => (b.totalPoints || 0) - (a.totalPoints || 0));
+                .sort((a: any, b: any) => {
+                  const bPlayed = b.played_last_match ? 1 : 0;
+                  const aPlayed = a.played_last_match ? 1 : 0;
+                  if (bPlayed !== aPlayed) return bPlayed - aPlayed;
+                  return (b.totalPoints || 0) - (a.totalPoints || 0);
+                });
 
               if (rolePlayers.length === 0) return null;
 
@@ -421,7 +426,12 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
       <div style={{ flex: 1, paddingBottom: '100px' }}>
         {players
           .filter((p: any) => getRoleTab(p.role) === activeTab)
-          .sort((a: any, b: any) => (b.totalPoints || 0) - (a.totalPoints || 0))
+          .sort((a: any, b: any) => {
+            const bPlayed = b.played_last_match ? 1 : 0;
+            const aPlayed = a.played_last_match ? 1 : 0;
+            if (bPlayed !== aPlayed) return bPlayed - aPlayed;
+            return (b.totalPoints || 0) - (a.totalPoints || 0);
+          })
           .map((p: any) => {
             const isSelected = selectedIds.has(p.id)
             const disabled = isPlayerDisabled(p)

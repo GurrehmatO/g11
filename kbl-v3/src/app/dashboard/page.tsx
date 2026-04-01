@@ -15,13 +15,13 @@ export default async function DashboardPage() {
 
   const { data: liveMatches } = await supabase
     .from('matches')
-    .select('id, name, match_date, team_a, team_b')
+    .select('id, name, match_date, team_a, team_b, user_teams(count)')
     .eq('status', 'live')
     .order('match_date', { ascending: true })
 
   const { data: upcomingMatches } = await supabase
     .from('matches')
-    .select('id, name, match_date, team_a, team_b')
+    .select('id, name, match_date, team_a, team_b, user_teams(count)')
     .eq('status', 'upcoming')
     .order('match_date', { ascending: true })
     .limit(5)
@@ -62,10 +62,13 @@ export default async function DashboardPage() {
                 <span style={{ color: '#EF4444', animation: 'pulse 2s infinite' }}>●</span> Live Matches
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {liveMatches.map((match) => (
+                {liveMatches.map((match: any) => {
+                  const teamsJoined = match.user_teams?.[0]?.count || 0;
+                  return (
                   <div key={match.id} style={{ padding: '1.5rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid #EF4444' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                       <span style={{ fontSize: '0.75rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid #EF4444', padding: '2px 6px', borderRadius: '4px' }}>In Progress</span>
+                      <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '12px' }}>Teams Joined: {teamsJoined}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                       <TeamLogo teamName={match.team_a} size={36} />
@@ -80,7 +83,7 @@ export default async function DashboardPage() {
                       View Live Standings
                     </NavButton>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           )}
@@ -90,13 +93,17 @@ export default async function DashboardPage() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {upcomingMatches && upcomingMatches.length > 0 ? (
-              upcomingMatches.map((match) => {
+              upcomingMatches.map((match: any) => {
                 const hasTeam = myTeamMatchIds.has(match.id);
+                const teamsJoined = match.user_teams?.[0]?.count || 0;
                 return (
                   <div key={match.id} style={{ padding: '1.5rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.25rem' }}>
-                      {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} IST
-                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600, margin: 0 }}>
+                        {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} IST
+                      </p>
+                      <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '12px' }}>Teams Joined: {teamsJoined}</span>
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                       <TeamLogo teamName={match.team_a} size={36} />
                       <h4 style={{ fontSize: '1.1rem', margin: 0, flex: 1, textAlign: 'center', color: 'var(--foreground)' }}>vs</h4>
