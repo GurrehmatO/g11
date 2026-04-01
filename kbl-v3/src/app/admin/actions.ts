@@ -731,6 +731,9 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
     }
 
     playerBasePoints[dbP.id] = pts
+    // Update played_last_match status in the players table
+    await supabase.from('players').update({ played_last_match: isActive }).eq('id', dbP.id)
+    
     await supabase.from('player_scores').upsert({
       match_id: matchId, player_id: dbP.id, points: pts
     }, { onConflict: 'match_id,player_id' })

@@ -13,6 +13,7 @@ type Player = {
   role: string
   team: string
   credits: number
+  played_last_match?: boolean
 }
 
 // Map api roles to our tabs
@@ -446,10 +447,12 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
                 {/* Player textual Info */}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>{p.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#3B82F6', marginTop: '4px', fontWeight: 500 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#3B82F6' }} />
-                  Played last match
-                </div>
+                {p.played_last_match && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#3B82F6', marginTop: '4px', fontWeight: 500 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#3B82F6' }} />
+                    Played last match
+                  </div>
+                )}
               </div>
 
               {/* Points */}
