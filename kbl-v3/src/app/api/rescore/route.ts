@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   console.log('With cricbuzz ID:', allMatches?.filter(m => !!m.cricbuzz_match_id).length)
   console.log('Completed AND with cricbuzz ID:', allMatches?.filter(m => !!m.cricbuzz_match_id && m.status === 'completed').length)
 
-  const { data: matches } = await supabase.from('matches').select('id, cricbuzz_match_id, status').not('cricbuzz_match_id', 'is', null).eq('status', 'completed')
+  const { data: matches } = await supabase.from('matches').select('id, cricbuzz_match_id, status').not('cricbuzz_match_id', 'is', null).eq('status', 'completed').order('match_date', { ascending: true })
   if (!matches || matches.length === 0) {
      return NextResponse.json({ 
         error: "No completed matches found",

@@ -694,11 +694,19 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
   }
 
   // 5. Load our DB players for this match and match by name
-  const { data: matchData } = await supabase.from('matches').select('team_a, team_b').eq('id', matchId).single()
+  const { data: matchData } = await supabase.from('matches').select('team_a, team_b, match_date').eq('id', matchId).single()
   if (!matchData) return { success: false, error: 'Match not found in database' }
 
+  // Check if this match is still the latest completed match for both teams, 
+  // so we avoid corrupting 'played_last_match' if an admin retroactively scores an old game
+  const { data: latestA } = await supabase.from('matches').select('match_date').or(`team_a.eq.${matchData.team_a},team_b.eq.${matchData.team_a}`).eq('status', 'completed').order('match_date', { ascending: false }).limit(1).single()
+  const { data: latestB } = await supabase.from('matches').select('match_date').or(`team_a.eq.${matchData.team_b},team_b.eq.${matchData.team_b}`).eq('status', 'completed').order('match_date', { ascending: false }).limit(1).single()
+  
+  const isLatestForA = !latestA || new Date(matchData.match_date) >= new Date(latestA.match_date)
+  const isLatestForB = !latestB || new Date(matchData.match_date) >= new Date(latestB.match_date)
+
   // Select 'cricbuzz_name' to allow explicit exact matching overrides
-  const { data: dbPlayers } = await supabase.from('players').select('id, name, cricbuzz_name').in('team', [matchData.team_a, matchData.team_b])
+  const { data: dbPlayers } = await supabase.from('players').select('id, name, cricbuzz_name, team').in('team', [matchData.team_a, matchData.team_b])
   if (!dbPlayers) return { success: false, error: 'No players found for this match' }
 
   // 6. Exact-match DB players to scraped stats and compute fantasy points
@@ -730,8 +738,12 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
     }
 
     playerBasePoints[dbP.id] = pts
-    // Update played_last_match status in the players table
-    await supabase.from('players').update({ played_last_match: isActive }).eq('id', dbP.id)
+    
+    // Update played_last_match status ONLY IF this is the most recent completed match for their team
+    const shouldUpdateFlag = (dbP.team === matchData.team_a && isLatestForA) || (dbP.team === matchData.team_b && isLatestForB)
+    if (shouldUpdateFlag) {
+      await supabase.from('players').update({ played_last_match: isActive }).eq('id', dbP.id)
+    }
     
     await supabase.from('player_scores').upsert({
       match_id: matchId, player_id: dbP.id, points: pts
