@@ -25,7 +25,21 @@ async function backfillGlobalRanks() {
 
   console.log(`Found ${matches.length} completed matches.`)
 
+  console.log('Fetching all users...')
+  const { data: allUsers, error: usersError } = await supabase
+    .from('profiles')
+    .select('id')
+
+  if (usersError) {
+    console.error('Error fetching users:', usersError)
+    process.exit(1)
+  }
+
+  const allUserIds = new Set(allUsers.map(u => u.id))
+  console.log(`Found ${allUserIds.size} users.`)
+
   const cumulativePoints = {}
+  allUserIds.forEach(id => { cumulativePoints[id] = 0 })
 
   for (const match of matches) {
     console.log(`\nProcessing match: ${match.id} (${match.match_date})`)
@@ -40,19 +54,12 @@ async function backfillGlobalRanks() {
       continue
     }
 
-    if (!ranks || ranks.length === 0) {
-      console.log('  No ranks for this match, skipping.')
-      continue
-    }
-
-    for (const rank of ranks) {
-      if (!cumulativePoints[rank.user_id]) {
-        cumulativePoints[rank.user_id] = 0
-      }
+    for (const rank of ranks || []) {
       cumulativePoints[rank.user_id] += Number(rank.relative_points)
     }
 
     const sorted = Object.entries(cumulativePoints)
+      .filter(([, pts]) => pts > 0)
       .sort(([, a], [, b]) => b - a)
 
     const rankMap = {}
@@ -60,20 +67,18 @@ async function backfillGlobalRanks() {
       rankMap[userId] = index + 1
     })
 
-    for (const rank of ranks) {
-      const globalRank = rankMap[rank.user_id]
-      const { error: updateError } = await supabase
-        .from('user_match_ranks')
-        .update({ global_rank: globalRank })
-        .eq('user_id', rank.user_id)
-        .eq('match_id', rank.match_id)
+    for (const userId of allUserIds) {
+      const globalRank = rankMap[userId] || allUserIds.size
+      const { error: upsertError } = await supabase
+        .from('user_global_rank_history')
+        .upsert({ user_id: userId, match_id: match.id, global_rank: globalRank })
 
-      if (updateError) {
-        console.error(`  Error updating ${rank.user_id}:`, updateError)
+      if (upsertError) {
+        console.error(`  Error upserting ${userId}:`, upsertError)
       }
     }
 
-    console.log(`  Updated ${ranks.length} users. Top 3:`, sorted.slice(0, 3).map(([id, pts], i) => `#${i + 1} ${id.slice(0, 8)} (${pts.toFixed(1)})`).join(', '))
+    console.log(`  Updated ${allUserIds.size} users. Top 3:`, sorted.slice(0, 3).map(([id, pts], i) => `#${i + 1} ${id.slice(0, 8)} (${pts.toFixed(1)})`).join(', '))
   }
 
   console.log('\nBackfill complete.')

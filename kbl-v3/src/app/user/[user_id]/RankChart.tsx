@@ -1,7 +1,8 @@
 'use client'
 
 import {
-  LineChart,
+  ComposedChart,
+  Bar,
   Line,
   XAxis,
   YAxis,
@@ -38,30 +39,57 @@ function CustomTooltip({ active, payload }: any) {
         {data.matchLabel}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-          <span style={{ color: '#f0a500' }}>Match Rank</span>
-          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#f0a500' }}>#{data.matchRank}</span>
-        </div>
+        {data.matchRank != null ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+            <span style={{ color: '#f0a500' }}>Match Rank</span>
+            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#f0a500' }}>#{data.matchRank}</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+            <span style={{ color: '#5a5a64' }}>Match Rank</span>
+            <span style={{ color: '#5a5a64' }}>Did not play</span>
+          </div>
+        )}
         {data.globalRank != null && (
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
             <span style={{ color: '#5a5a64' }}>Global Rank</span>
             <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#5a5a64' }}>#{data.globalRank}</span>
           </div>
         )}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', borderTop: '1px solid #2a2a30', paddingTop: '0.3rem', marginTop: '0.15rem' }}>
-          <span style={{ color: '#e8e6e1' }}>Points</span>
-          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#e8e6e1' }}>{data.points}</span>
-        </div>
+        {data.points != null && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', borderTop: '1px solid #2a2a30', paddingTop: '0.3rem', marginTop: '0.15rem' }}>
+            <span style={{ color: '#e8e6e1' }}>Points</span>
+            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#e8e6e1' }}>{data.points}</span>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-export function RankChart({ data }: { data: Array<{ matchLabel: string; matchNumber: number; matchRank: number; globalRank: number | null; rawScore: number; points: number }> }) {
-  const maxRank = Math.max(
-    ...data.map(d => d.matchRank),
-    ...data.filter(d => d.globalRank != null).map(d => d.globalRank as number)
-  )
+type ChartDataPoint = {
+  matchLabel: string
+  matchNumber: number
+  matchDate: string
+  matchRank: number | null
+  globalRank: number | null
+  rawScore: number | null
+  points: number | null
+  matchId: string
+  barValue: number | null
+}
+
+export function RankChart({ data }: { data: Omit<ChartDataPoint, 'barValue'>[] }) {
+  const matchRanks = data.filter(d => d.matchRank != null).map(d => d.matchRank as number)
+  const globalRanks = data.filter(d => d.globalRank != null).map(d => d.globalRank as number)
+
+  const allRanks = [...matchRanks, ...globalRanks]
+  const maxRank = allRanks.length > 0 ? Math.max(...allRanks) : 10
+
+  const chartData: ChartDataPoint[] = data.map(d => ({
+    ...d,
+    barValue: d.matchRank != null ? maxRank + 1 - d.matchRank : null,
+  }))
 
   const yAxisDomain = [Math.max(1, maxRank - 2), 1]
 
@@ -70,7 +98,7 @@ export function RankChart({ data }: { data: Array<{ matchLabel: string; matchNum
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+      <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#2a2a30" />
         <XAxis
           dataKey="matchNumber"
@@ -88,6 +116,12 @@ export function RankChart({ data }: { data: Array<{ matchLabel: string; matchNum
           />
         </XAxis>
         <YAxis
+          yAxisId="bar"
+          domain={[0, maxRank]}
+          hide
+        />
+        <YAxis
+          yAxisId="line"
           domain={yAxisDomain}
           axisLine={{ stroke: '#2a2a30' }}
           tickLine={false}
@@ -99,16 +133,17 @@ export function RankChart({ data }: { data: Array<{ matchLabel: string; matchNum
         <Legend
           wrapperStyle={{ fontSize: '0.8rem', fontFamily: "'IBM Plex Sans', sans-serif", paddingTop: '0.5rem' }}
         />
-        <Line
-          type="monotone"
-          dataKey="matchRank"
+        <Bar
+          yAxisId="bar"
+          dataKey="barValue"
           name="Match Rank"
-          stroke="#f0a500"
-          strokeWidth={2.5}
-          dot={{ fill: '#f0a500', strokeWidth: 0, r: 4 }}
-          activeDot={{ r: 6, stroke: '#f0a500', strokeWidth: 2, fill: '#141418' }}
+          fill="#f0a500"
+          radius={[4, 4, 0, 0]}
+          maxBarSize={32}
+          minPointSize={4}
         />
         <Line
+          yAxisId="line"
           type="monotone"
           dataKey="globalRank"
           name="Global Rank"
@@ -119,7 +154,7 @@ export function RankChart({ data }: { data: Array<{ matchLabel: string; matchNum
           activeDot={{ r: 5, stroke: '#5a5a64', strokeWidth: 2, fill: '#141418' }}
           connectNulls={false}
         />
-      </LineChart>
+      </ComposedChart>
     </ResponsiveContainer>
   )
 }
