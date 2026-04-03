@@ -358,6 +358,29 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.scoreboard-name:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+a.scoreboard-name {
+  cursor: pointer;
+}
+
+.scoreboard-name:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+a.scoreboard-name {
+  cursor: pointer;
 }
 
 .scoreboard-you-badge {
@@ -390,6 +413,172 @@ button {
   color: var(--accent);
   font-weight: 600;
   margin: 0;
+}
+
+/* ── Profile Page ── */
+.profile-header {
+  margin-bottom: 2rem;
+}
+
+.profile-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s ease;
+}
+
+.profile-back-link:hover {
+  color: var(--accent);
+}
+
+.profile-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.profile-stat {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.profile-stat strong {
+  color: var(--foreground);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+}
+
+/* ── Chart Container ── */
+.chart-container {
+  width: 100%;
+  padding: 1.5rem 0;
+}
+
+/* ── Profile Page ── */
+.profile-header {
+  margin-bottom: 2rem;
+}
+
+.profile-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s ease;
+}
+
+.profile-back-link:hover {
+  color: var(--accent);
+}
+
+.profile-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.profile-stat {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.profile-stat strong {
+  color: var(--foreground);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+}
+
+/* ── Chart Container ── */
+.chart-container {
+  width: 100%;
+  padding: 1.5rem 0;
+}
+
+/* ── Match History Table ── */
+.match-history-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.match-history-header {
+  display: grid;
+  grid-template-columns: 1.5fr 0.7fr 0.5fr 0.5fr 0.5fr 0.5fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.match-history-row {
+  display: grid;
+  grid-template-columns: 1.5fr 0.7fr 0.5fr 0.5fr 0.5fr 0.5fr;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: background 0.15s ease;
+  align-items: center;
+}
+
+.match-history-row:hover {
+  background: var(--accent-glow);
+}
+
+.match-history-row .mh-match {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-history-row .mh-date {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.match-history-row .mh-raw,
+.match-history-row .mh-rank,
+.match-history-row .mh-pts,
+.match-history-row .mh-global {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  text-align: center;
+}
+
+.match-history-row .mh-rank {
+  color: var(--accent);
+}
+
+.match-history-row .mh-global {
+  color: var(--muted);
 }
 
 /* ── Animations ── */
@@ -491,4 +680,45 @@ button {
   .mobile-only-label {
     display: block !important;
   }
+
+  .profile-name {
+    font-size: 1.5rem !important;
+  }
+
+  .profile-stats {
+    flex-direction: column;
+    gap: 0.5rem !important;
+    align-items: flex-start !important;
+  }
+
+  .match-history-header {
+    display: none !important;
+  }
+
+  .match-history-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.25rem !important;
+    padding: 1rem !important;
+  }
+
+  .match-history-row .mh-match {
+    font-size: 0.95rem;
+  }
+
+  .match-history-row .mh-date {
+    font-size: 0.75rem;
+  }
+
+  .match-history-row .mh-raw,
+  .match-history-row .mh-rank,
+  .match-history-row .mh-pts,
+  .match-history-row .mh-global {
+    text-align: left !important;
+    font-size: 0.8rem;
+  }
+
+  .match-history-row .mh-raw::before { content: 'Raw: '; color: var(--muted); font-weight: 400; font-family: 'IBM Plex Sans', sans-serif; }
+  .match-history-row .mh-rank::before { content: 'Rank: '; color: var(--muted); font-weight: 400; font-family: 'IBM Plex Sans', sans-serif; }
+  .match-history-row .mh-pts::before { content: 'Pts: '; color: var(--muted); font-weight: 400; font-family: 'IBM Plex Sans', sans-serif; }
+  .match-history-row .mh-global::before { content: 'Global: '; color: var(--muted); font-weight: 400; font-family: 'IBM Plex Sans', sans-serif; }
 }

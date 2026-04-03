@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { NavButton } from '@/components/NavButton'
 import { TeamLogo } from '@/components/TeamLogo'
 import { PaginatedResults } from '@/components/PaginatedResults'
@@ -143,10 +144,10 @@ export default async function DashboardPage() {
                   <div className="scoreboard-avatar">
                     {(player.display_name || player.email)[0].toUpperCase()}
                   </div>
-                  <div className="scoreboard-name">
+                  <Link href={`/user/${player.id}`} className="scoreboard-name">
                     {player.display_name || player.email.split('@')[0]}
                     {player.id === user.id && <span className="scoreboard-you-badge">You</span>}
-                  </div>
+                  </Link>
                   <div className="scoreboard-points">
                     {player.total_points}<span className="scoreboard-points-label">PTS</span>
                   </div>
