@@ -11,7 +11,6 @@ type Match = {
   team_a: string
   team_b: string
   status: string
-  api_match_id: string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -38,7 +37,7 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
   const handleConfirm = () => {
     if (!confirming) return
     startTransition(async () => {
-      await changeMatchStatus(match.id, match.api_match_id, confirming, cricbuzzUrl)
+      await changeMatchStatus(match.id, confirming, cricbuzzUrl)
       setConfirming(null)
       setCricbuzzUrl('')
       onDone()

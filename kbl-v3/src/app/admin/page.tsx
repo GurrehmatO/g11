@@ -16,9 +16,9 @@ export default async function AdminPage() {
   const { count: playerCount } = await supabase.from('players').select('*', { count: 'exact', head: true })
 
   // Fetch all 3 match states
-  const { data: liveMatches }     = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status, api_match_id').eq('status', 'live').order('match_date', { ascending: true })
-  const { data: upcomingMatches } = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status, api_match_id').eq('status', 'upcoming').order('match_date', { ascending: true })
-  const { data: completedMatches } = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status, api_match_id').eq('status', 'completed').order('match_date', { ascending: false })
+  const { data: liveMatches }     = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'live').order('match_date', { ascending: true })
+  const { data: upcomingMatches } = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'upcoming').order('match_date', { ascending: true })
+  const { data: completedMatches } = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'completed').order('match_date', { ascending: false })
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '2rem', animation: 'fadeIn 0.5s ease' }}>
