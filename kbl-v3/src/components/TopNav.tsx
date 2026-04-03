@@ -27,7 +27,7 @@ export function TopNav({ user }: { user: any }) {
       alignItems: 'center' 
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <a href={user ? '/dashboard' : '/'} style={{ fontSize: '1.5rem', fontWeight: 800 }} className="heading-gradient">G11</a>
+        <a href={user ? '/dashboard' : '/'} style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-space-grotesk), sans-serif' }} className="heading-gradient">G11</a>
       </div>
       <div className="nav-links" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <a href="/dashboard" style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.95rem' }}>Dashboard</a>

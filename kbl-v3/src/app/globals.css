@@ -1,26 +1,38 @@
 :root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-foreground: #ffffff;
-  --card: #1e293b;
-  --card-foreground: #f8fafc;
-  --border: #334155;
-  --accent: #8b5cf6;
-  --radius: 12px;
+  --background: #0a0a0c;
+  --foreground: #e8e6e1;
+  --primary: #f0a500;
+  --primary-hover: #d4920a;
+  --primary-foreground: #0a0a0c;
+  --card: #141418;
+  --card-hover: #1a1a20;
+  --card-foreground: #e8e6e1;
+  --border: #2a2a30;
+  --accent: #f0a500;
+  --accent-glow: rgba(240, 165, 0, 0.12);
+  --accent-glow-strong: rgba(240, 165, 0, 0.25);
+  --live: #ff3b3b;
+  --live-glow: rgba(255, 59, 59, 0.15);
+  --muted: #5a5a64;
+  --radius: 8px;
 }
 
 [data-theme='light'] {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-foreground: #ffffff;
+  --background: #f5f2eb;
+  --foreground: #1a1a1a;
+  --primary: #b8860b;
+  --primary-hover: #996e09;
+  --primary-foreground: #f5f2eb;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --border: #e2e8f0;
-  --accent: #6d28d9;
+  --card-hover: #faf8f3;
+  --card-foreground: #1a1a1a;
+  --border: #d9d3c5;
+  --accent: #b8860b;
+  --accent-glow: rgba(184, 134, 11, 0.08);
+  --accent-glow-strong: rgba(184, 134, 11, 0.15);
+  --live: #dc2626;
+  --live-glow: rgba(220, 38, 38, 0.08);
+  --muted: #8a8578;
 }
 
 html,
@@ -32,7 +44,7 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -58,32 +70,78 @@ button {
   color: inherit;
 }
 
+/* ── Glass Panel ── */
 .glass-panel {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
 }
 
-[data-theme='light'] .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow-strong), transparent);
+  pointer-events: none;
 }
 
+[data-theme='light'] .glass-panel::before {
+  background: linear-gradient(90deg, transparent, rgba(184, 134, 11, 0.2), transparent);
+}
+
+/* ── Typography ── */
 .heading-gradient {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #f5c842 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent;
 }
 
+/* ── Section Headers ── */
+.section-header {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.section-header::before {
+  content: '';
+  width: 3px;
+  height: 1.1em;
+  background: var(--accent);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.section-header.live::before {
+  background: var(--live);
+  box-shadow: 0 0 8px var(--live-glow);
+}
+
+/* ── Buttons ── */
 .btn-primary {
-  background-color: var(--primary);
+  background: var(--accent);
   color: var(--primary-foreground);
-  padding: 0.75rem 1.5rem;
+  padding: 0.7rem 1.4rem;
   border-radius: var(--radius);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
@@ -92,64 +150,330 @@ button {
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
+  background: var(--primary-hover);
+  box-shadow: 0 4px 20px var(--accent-glow-strong);
   transform: translateY(-1px);
 }
 
-/* Mobile Optimizations */
+.btn-secondary {
+  background: transparent;
+  color: var(--foreground);
+  padding: 0.7rem 1.4rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Dashboard Grid ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* ── Match Cards ── */
+.match-card {
+  padding: 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.match-card:hover {
+  border-color: var(--accent);
+  background: var(--card-hover);
+  box-shadow: 0 8px 32px var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.match-card.live {
+  border-color: var(--live);
+}
+
+.match-card.live::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--live), transparent);
+}
+
+.match-card.live:hover {
+  box-shadow: 0 8px 32px var(--live-glow);
+}
+
+/* ── Live Badge ── */
+.live-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--live);
+  border: 1px solid var(--live);
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--live);
+  border-radius: 50%;
+  animation: livePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.5); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 5px rgba(255, 59, 59, 0); }
+}
+
+/* ── Teams Joined Badge ── */
+.teams-badge {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+[data-theme='light'] .teams-badge {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Match Teams Display ── */
+.match-teams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.match-vs {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 24px;
+  text-align: center;
+}
+
+.match-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.match-labels span:first-child {
+  text-align: left;
+  flex: 1;
+}
+
+.match-labels span:last-child {
+  text-align: right;
+  flex: 1;
+}
+
+/* ── Scoreboard (Leaderboard) ── */
+.scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.scoreboard-row {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  gap: 0.75rem;
+}
+
+.scoreboard-row:hover {
+  background: var(--accent-glow);
+}
+
+.scoreboard-row.you {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+}
+
+.scoreboard-rank {
+  width: 28px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.scoreboard-rank.gold { color: #f0a500; }
+.scoreboard-rank.silver { color: #a8a8b0; }
+.scoreboard-rank.bronze { color: #c47a2a; }
+.scoreboard-rank.default { color: var(--muted); }
+
+.scoreboard-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.scoreboard-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scoreboard-you-badge {
+  font-size: 0.6rem;
+  color: var(--accent);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-left: 0.5rem;
+}
+
+.scoreboard-points {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--foreground);
+  flex-shrink: 0;
+}
+
+.scoreboard-points-label {
+  font-size: 0.6rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* ── Match Date ── */
+.match-date {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-1 { animation: fadeInUp 0.4s ease both; animation-delay: 0.05s; }
+.stagger-2 { animation: fadeInUp 0.4s ease both; animation-delay: 0.12s; }
+.stagger-3 { animation: fadeInUp 0.4s ease both; animation-delay: 0.19s; }
+.stagger-4 { animation: fadeInUp 0.4s ease both; animation-delay: 0.26s; }
+
+/* ── Mobile ── */
 @media (max-width: 600px) {
   .dashboard-grid {
     grid-template-columns: 1fr !important;
   }
+
   .glass-panel {
     padding: 1.25rem !important;
   }
+
   .heading-gradient {
-    font-size: 2rem !important;
+    font-size: 1.75rem !important;
   }
+
   .global-header {
     flex-wrap: wrap !important;
     gap: 0.5rem !important;
-    margin-bottom: 2rem !important;
+    margin-bottom: 1.75rem !important;
   }
+
   .page-container {
     padding: 1rem !important;
   }
+
   .main-nav {
     padding: 0.75rem 1rem !important;
     flex-direction: column;
     align-items: flex-start !important;
     gap: 0.75rem;
   }
+
   .nav-links {
     gap: 0.75rem !important;
     width: 100%;
     justify-content: space-between;
   }
+
   .nav-user {
     padding-left: 0.5rem !important;
     margin-left: 0.5rem !important;
   }
+
   .nav-user span {
-    display: none; /* Hide email on mobile to save space */
+    display: none;
   }
-  
-  /* Match Leaderboard Mobile */
+
   .match-lb-header {
     display: none !important;
   }
+
   .match-lb-row {
     flex-wrap: wrap !important;
     gap: 0.5rem !important;
   }
+
   .match-lb-rank {
     width: auto !important;
     min-width: 40px;
   }
+
   .match-lb-player {
     flex: 1 !important;
     min-width: 200px;
   }
+
   .match-lb-stats {
     width: 100% !important;
     display: flex;
@@ -158,10 +482,12 @@ button {
     padding-top: 0.5rem;
     border-top: 1px solid rgba(255,255,255,0.05);
   }
+
   .match-lb-raw, .match-lb-pts {
     width: auto !important;
     text-align: left !important;
   }
+
   .mobile-only-label {
     display: block !important;
   }
