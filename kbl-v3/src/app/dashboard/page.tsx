@@ -39,6 +39,28 @@ export default async function DashboardPage() {
 
   const myTeamMatchIds = new Set(myTeams?.map(t => t.match_id) || [])
 
+  const latestCompletedMatch = completedMatches?.[0]
+  const previousCompletedMatch = completedMatches?.[1]
+
+  let latestRanks = new Map<string, number>()
+  let previousRanks = new Map<string, number>()
+
+  if (latestCompletedMatch) {
+    const { data: lr } = await supabase
+      .from('user_global_rank_history')
+      .select('user_id, global_rank')
+      .eq('match_id', latestCompletedMatch.id)
+    lr?.forEach(r => latestRanks.set(r.user_id, r.global_rank))
+  }
+
+  if (previousCompletedMatch) {
+    const { data: pr } = await supabase
+      .from('user_global_rank_history')
+      .select('user_id, global_rank')
+      .eq('match_id', previousCompletedMatch.id)
+    pr?.forEach(r => previousRanks.set(r.user_id, r.global_rank))
+  }
+
   const { data: leaderboard } = await supabase
     .from('profiles')
     .select('id, display_name, email, total_points')
@@ -50,6 +72,15 @@ export default async function DashboardPage() {
     if (index === 1) return 'silver'
     if (index === 2) return 'bronze'
     return 'default'
+  }
+
+  const getRankDelta = (userId: string, currentRank: number) => {
+    const prevRank = previousRanks.get(userId)
+    if (prevRank == null) return null
+    const diff = prevRank - currentRank
+    if (diff > 0) return { direction: 'up' as const, amount: diff }
+    if (diff < 0) return { direction: 'down' as const, amount: Math.abs(diff) }
+    return { direction: 'same' as const, amount: 0 }
   }
 
   return (
@@ -138,9 +169,19 @@ export default async function DashboardPage() {
           <div className="glass-panel" style={{ padding: '1.75rem' }}>
             <h2 className="section-header">Global Leaderboard</h2>
             <div className="scoreboard" style={{ marginBottom: '2.5rem' }}>
-              {leaderboard && leaderboard.map((player, index) => (
+              {leaderboard && leaderboard.map((player, index) => {
+                const currentRank = index + 1
+                const delta = getRankDelta(player.id, currentRank)
+                return (
                 <div key={player.id} className={`scoreboard-row ${player.id === user.id ? 'you' : ''}`}>
-                  <span className={`scoreboard-rank ${getRankClass(index)}`}>#{index + 1}</span>
+                  <span className={`scoreboard-rank ${getRankClass(index)}`}>#{currentRank}</span>
+                  {delta && (
+                    <span className="rank-delta" style={{ width: '20px', flexShrink: 0, textAlign: 'center', fontSize: '0.75rem' }}>
+                      {delta.direction === 'up' && <span style={{ color: '#22c55e' }}>▲{delta.amount > 1 ? delta.amount : ''}</span>}
+                      {delta.direction === 'down' && <span style={{ color: '#ef4444' }}>▼{delta.amount > 1 ? delta.amount : ''}</span>}
+                      {delta.direction === 'same' && <span style={{ color: '#5a5a64' }}>—</span>}
+                    </span>
+                  )}
                   <div className="scoreboard-avatar">
                     {(player.display_name || player.email)[0].toUpperCase()}
                   </div>
@@ -152,7 +193,7 @@ export default async function DashboardPage() {
                     {player.total_points}<span className="scoreboard-points-label">PTS</span>
                   </div>
                 </div>
-              ))}
+              )})}
               {(!leaderboard || leaderboard.length === 0) && (
                 <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>No points on the board yet!</p>
               )}
