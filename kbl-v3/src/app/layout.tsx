@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -42,6 +43,7 @@ export default async function RootLayout({
           </Suspense>
         </main>
         <ThemeToggle />
+        <Analytics />
       </body>
     </html>
   );
