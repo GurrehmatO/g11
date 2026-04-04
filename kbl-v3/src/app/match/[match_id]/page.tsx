@@ -10,13 +10,23 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
 
   if (!user) redirect('/login')
 
-  const { data: match } = await supabase.from('matches').select('*').eq('id', params.match_id).single()
+  const [{ data: match }, { data: userTeams }, { data: scores }] = await Promise.all([
+    supabase.from('matches').select('*').eq('id', params.match_id).single(),
+    supabase
+      .from('user_teams')
+      .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team))')
+      .eq('match_id', params.match_id),
+    supabase
+      .from('player_scores')
+      .select('player_id, points')
+      .eq('match_id', params.match_id),
+  ])
+
   if (!match) return <div>Match not found</div>
 
   const isCompleted = match.status === 'completed'
   const isLive = match.status === 'live'
 
-  // For completed matches: get ranks (scored & locked)
   const { data: ranks } = isCompleted
     ? await supabase
         .from('user_match_ranks')
@@ -25,7 +35,6 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
         .order('relative_rank', { ascending: true })
     : { data: null }
 
-  // For live matches OR completed without ranks: get all user_teams (unranked)
   const { data: liveEntries } = (isLive || isCompleted)
     ? await supabase
         .from('user_teams')
@@ -35,22 +44,9 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
 
   const hasRanks = ranks && ranks.length > 0
 
-  // Fetch full team players and scores for the pitch modal
-  const { data: userTeams } = await supabase
-    .from('user_teams')
-    .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team))')
-    .eq('match_id', params.match_id)
-    
-  const { data: scores } = await supabase
-    .from('player_scores')
-    .select('player_id, points')
-    .eq('match_id', params.match_id)
-    
-  // Map scores
   const scoreMap: Record<string, number> = {}
   if (scores) scores.forEach(s => scoreMap[s.player_id] = s.points)
 
-  // Map teams for pitch modal
   const teamMap: Record<string, any> = {}
   if (userTeams) {
     userTeams.forEach((ut: any) => {
@@ -63,7 +59,6 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
     })
   }
 
-  // Format date in IST (server-side safe)
   const matchDateIST = new Date(match.match_date).toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata',
     day: 'numeric',
@@ -97,7 +92,6 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
       </h2>
       
       <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-        {/* ─── COMPLETED WITH RANKS: Ranked leaderboard ─── */}
         {isCompleted && hasRanks && (
           <>
             <div className="match-lb-header" style={{ display: 'flex', padding: '1rem', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>
@@ -150,8 +144,6 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
           </>
         )}
 
-
-        {/* ─── LIVE or COMPLETED WITHOUT RANKS: Unranked participant list ─── */}
         {(isLive || (isCompleted && !hasRanks)) && (
           <>
             <div style={{ display: 'flex', padding: '1rem', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>
@@ -204,7 +196,6 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
           </>
         )}
 
-        {/* ─── UPCOMING: Not ready yet ─── */}
         {!isLive && !isCompleted && (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8' }}>
             This match hasn&apos;t started yet. Draft your team before the deadline!

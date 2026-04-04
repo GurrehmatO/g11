@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -36,7 +37,9 @@ export default async function RootLayout({
       <body className={`${spaceGrotesk.variable} ${ibmPlexSans.variable}`}>
         <TopNav user={user} />
         <main style={{ minHeight: 'calc(100vh - 72px)' }}>
-          {children}
+          <Suspense>
+            {children}
+          </Suspense>
         </main>
         <ThemeToggle />
       </body>

@@ -13,21 +13,22 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, display_name, email, total_points')
-    .eq('id', user_id)
-    .single()
+  const [{ data: profile }, { data: completedMatches }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, display_name, email, total_points')
+      .eq('id', user_id)
+      .single(),
+    supabase
+      .from('matches')
+      .select('id, name, match_date, team_a, team_b')
+      .eq('status', 'completed')
+      .order('match_date', { ascending: true }),
+  ])
 
   if (!profile) {
     notFound()
   }
-
-  const { data: completedMatches } = await supabase
-    .from('matches')
-    .select('id, name, match_date, team_a, team_b')
-    .eq('status', 'completed')
-    .order('match_date', { ascending: true })
 
   if (!completedMatches || completedMatches.length === 0) {
     return (
@@ -48,17 +49,18 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
 
   const matchIds = completedMatches.map(m => m.id)
 
-  const { data: userMatchRanks } = await supabase
-    .from('user_match_ranks')
-    .select('match_id, raw_score, relative_rank, relative_points')
-    .eq('user_id', user_id)
-    .in('match_id', matchIds)
-
-  const { data: globalRanks } = await supabase
-    .from('user_global_rank_history')
-    .select('match_id, global_rank')
-    .eq('user_id', user_id)
-    .in('match_id', matchIds)
+  const [{ data: userMatchRanks }, { data: globalRanks }] = await Promise.all([
+    supabase
+      .from('user_match_ranks')
+      .select('match_id, raw_score, relative_rank, relative_points')
+      .eq('user_id', user_id)
+      .in('match_id', matchIds),
+    supabase
+      .from('user_global_rank_history')
+      .select('match_id, global_rank')
+      .eq('user_id', user_id)
+      .in('match_id', matchIds),
+  ])
 
   const rankMap = new Map()
   userMatchRanks?.forEach(r => rankMap.set(r.match_id, r))

@@ -13,29 +13,39 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const { data: liveMatches } = await supabase
-    .from('matches')
-    .select('id, name, match_date, team_a, team_b, user_teams(count)')
-    .eq('status', 'live')
-    .order('match_date', { ascending: true })
-
-  const { data: upcomingMatches } = await supabase
-    .from('matches')
-    .select('id, name, match_date, team_a, team_b, user_teams(count)')
-    .eq('status', 'upcoming')
-    .order('match_date', { ascending: true })
-    .limit(5)
-
-  const { data: completedMatches } = await supabase
-    .from('matches')
-    .select('id, name, match_date, team_a, team_b')
-    .eq('status', 'completed')
-    .order('match_date', { ascending: false })
-
-  const { data: myTeams } = await supabase
-    .from('user_teams')
-    .select('match_id')
-    .eq('user_id', user.id)
+  const [
+    { data: liveMatches },
+    { data: upcomingMatches },
+    { data: completedMatches },
+    { data: myTeams },
+    { data: leaderboard },
+  ] = await Promise.all([
+    supabase
+      .from('matches')
+      .select('id, name, match_date, team_a, team_b, user_teams(count)')
+      .eq('status', 'live')
+      .order('match_date', { ascending: true }),
+    supabase
+      .from('matches')
+      .select('id, name, match_date, team_a, team_b, user_teams(count)')
+      .eq('status', 'upcoming')
+      .order('match_date', { ascending: true })
+      .limit(5),
+    supabase
+      .from('matches')
+      .select('id, name, match_date, team_a, team_b')
+      .eq('status', 'completed')
+      .order('match_date', { ascending: false }),
+    supabase
+      .from('user_teams')
+      .select('match_id')
+      .eq('user_id', user.id),
+    supabase
+      .from('profiles')
+      .select('id, display_name, email, total_points')
+      .order('total_points', { ascending: false })
+      .limit(15),
+  ])
 
   const myTeamMatchIds = new Set(myTeams?.map(t => t.match_id) || [])
 
@@ -45,27 +55,33 @@ export default async function DashboardPage() {
   let latestRanks = new Map<string, number>()
   let previousRanks = new Map<string, number>()
 
+  const rankPromises: Promise<void>[] = []
+
   if (latestCompletedMatch) {
-    const { data: lr } = await supabase
-      .from('user_global_rank_history')
-      .select('user_id, global_rank')
-      .eq('match_id', latestCompletedMatch.id)
-    lr?.forEach(r => latestRanks.set(r.user_id, r.global_rank))
+    rankPromises.push(
+      supabase
+        .from('user_global_rank_history')
+        .select('user_id, global_rank')
+        .eq('match_id', latestCompletedMatch.id)
+        .then(({ data: lr }) => {
+          lr?.forEach(r => latestRanks.set(r.user_id, r.global_rank))
+        })
+    )
   }
 
   if (previousCompletedMatch) {
-    const { data: pr } = await supabase
-      .from('user_global_rank_history')
-      .select('user_id, global_rank')
-      .eq('match_id', previousCompletedMatch.id)
-    pr?.forEach(r => previousRanks.set(r.user_id, r.global_rank))
+    rankPromises.push(
+      supabase
+        .from('user_global_rank_history')
+        .select('user_id, global_rank')
+        .eq('match_id', previousCompletedMatch.id)
+        .then(({ data: pr }) => {
+          pr?.forEach(r => previousRanks.set(r.user_id, r.global_rank))
+        })
+    )
   }
 
-  const { data: leaderboard } = await supabase
-    .from('profiles')
-    .select('id, display_name, email, total_points')
-    .order('total_points', { ascending: false })
-    .limit(15)
+  await Promise.all(rankPromises)
 
   const getRankClass = (index: number) => {
     if (index === 0) return 'gold'
@@ -173,27 +189,28 @@ export default async function DashboardPage() {
                 const currentRank = index + 1
                 const delta = getRankDelta(player.id, currentRank)
                 return (
-                <div key={player.id} className={`scoreboard-row ${player.id === user.id ? 'you' : ''}`}>
-                  <span className={`scoreboard-rank ${getRankClass(index)}`}>#{currentRank}</span>
-                  {delta && (
-                    <span className="rank-delta" style={{ width: '20px', flexShrink: 0, textAlign: 'center', fontSize: '0.75rem' }}>
-                      {delta.direction === 'up' && <span style={{ color: '#22c55e' }}>▲{delta.amount > 1 ? delta.amount : ''}</span>}
-                      {delta.direction === 'down' && <span style={{ color: '#ef4444' }}>▼{delta.amount > 1 ? delta.amount : ''}</span>}
-                      {delta.direction === 'same' && <span style={{ color: '#5a5a64' }}>—</span>}
-                    </span>
-                  )}
-                  <div className="scoreboard-avatar">
-                    {(player.display_name || player.email)[0].toUpperCase()}
+                  <div key={player.id} className={`scoreboard-row ${player.id === user.id ? 'you' : ''}`}>
+                    <span className={`scoreboard-rank ${getRankClass(index)}`}>#{currentRank}</span>
+                    {delta && (
+                      <span className="rank-delta" style={{ width: '20px', flexShrink: 0, textAlign: 'center', fontSize: '0.75rem' }}>
+                        {delta.direction === 'up' && <span style={{ color: '#22c55e' }}>▲{delta.amount > 1 ? delta.amount : ''}</span>}
+                        {delta.direction === 'down' && <span style={{ color: '#ef4444' }}>▼{delta.amount > 1 ? delta.amount : ''}</span>}
+                        {delta.direction === 'same' && <span style={{ color: '#5a5a64' }}>—</span>}
+                      </span>
+                    )}
+                    <div className="scoreboard-avatar">
+                      {(player.display_name || player.email)[0].toUpperCase()}
+                    </div>
+                    <Link href={`/user/${player.id}`} className="scoreboard-name">
+                      {player.display_name || player.email.split('@')[0]}
+                      {player.id === user.id && <span className="scoreboard-you-badge">You</span>}
+                    </Link>
+                    <div className="scoreboard-points">
+                      {player.total_points}<span className="scoreboard-points-label">PTS</span>
+                    </div>
                   </div>
-                  <Link href={`/user/${player.id}`} className="scoreboard-name">
-                    {player.display_name || player.email.split('@')[0]}
-                    {player.id === user.id && <span className="scoreboard-you-badge">You</span>}
-                  </Link>
-                  <div className="scoreboard-points">
-                    {player.total_points}<span className="scoreboard-points-label">PTS</span>
-                  </div>
-                </div>
-              )})}
+                )
+              })}
               {(!leaderboard || leaderboard.length === 0) && (
                 <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>No points on the board yet!</p>
               )}

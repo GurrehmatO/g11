@@ -12,19 +12,24 @@ export default async function AdminPage() {
     redirect('/login')
   }
 
-  const { count: matchCount } = await supabase.from('matches').select('*', { count: 'exact', head: true })
-  const { count: playerCount } = await supabase.from('players').select('*', { count: 'exact', head: true })
-
-  // Fetch all 3 match states
-  const { data: liveMatches }     = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'live').order('match_date', { ascending: true })
-  const { data: upcomingMatches } = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'upcoming').order('match_date', { ascending: true })
-  const { data: completedMatches } = await supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'completed').order('match_date', { ascending: false })
+  const [
+    { count: matchCount },
+    { count: playerCount },
+    { data: liveMatches },
+    { data: upcomingMatches },
+    { data: completedMatches },
+  ] = await Promise.all([
+    supabase.from('matches').select('*', { count: 'exact', head: true }),
+    supabase.from('players').select('*', { count: 'exact', head: true }),
+    supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'live').order('match_date', { ascending: true }),
+    supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'upcoming').order('match_date', { ascending: true }),
+    supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'completed').order('match_date', { ascending: false }),
+  ])
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '2rem', animation: 'fadeIn 0.5s ease' }}>
       <h1 className="heading-gradient" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Platform Admin</h1>
 
-      {/* ── Match Manager ─────────────────────────────── */}
       <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem' }}>Match State Manager</h3>
         <AdminMatchManager
@@ -34,7 +39,6 @@ export default async function AdminPage() {
         />
       </div>
 
-      {/* ── Sync Matches ──────────────────────────────── */}
       <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
         <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>1. Match Synchronization</h3>
         <p style={{ color: 'var(--border)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
@@ -48,7 +52,6 @@ export default async function AdminPage() {
         </form>
       </div>
 
-      {/* ── Sync Players ──────────────────────────────── */}
       <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
         <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>2. Player Synchronization</h3>
         <p style={{ color: 'var(--border)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>

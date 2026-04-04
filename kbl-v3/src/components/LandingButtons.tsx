@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { RulesModal } from './RulesModal'
 
@@ -9,13 +10,13 @@ export function LandingButtons({ user }: { user: any }) {
   return (
     <>
       <div style={{ display: 'flex', gap: '1rem' }}>
-        <a 
+        <Link 
           href={user ? "/dashboard" : "/login"} 
           className="btn-primary" 
           style={{ padding: '0.875rem 2rem', fontSize: '1.125rem' }}
         >
           Draft Your Team
-        </a>
+        </Link>
         <button 
           onClick={() => setIsRulesOpen(true)} 
           className="glass-panel" 

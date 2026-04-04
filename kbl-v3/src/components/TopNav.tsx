@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '@/app/auth/actions';
 
@@ -27,10 +28,10 @@ export function TopNav({ user }: { user: any }) {
       alignItems: 'center' 
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <a href={user ? '/dashboard' : '/'} style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-space-grotesk), sans-serif' }} className="heading-gradient">G11</a>
+        <Link href={user ? '/dashboard' : '/'} style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-space-grotesk), sans-serif' }} className="heading-gradient">G11</Link>
       </div>
       <div className="nav-links" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <a href="/dashboard" style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.95rem' }}>Dashboard</a>
+        <Link href="/dashboard" style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.95rem' }}>Dashboard</Link>
         
         {user ? (
           <div className="nav-user" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem', paddingLeft: '1rem', borderLeft: '1px solid var(--border)' }}>
@@ -40,7 +41,7 @@ export function TopNav({ user }: { user: any }) {
             </form>
           </div>
         ) : (
-          <a href="/login" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', marginLeft: '1rem' }}>Login</a>
+          <Link href="/login" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', marginLeft: '1rem' }}>Login</Link>
         )}
       </div>
     </nav>
