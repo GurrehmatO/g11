@@ -15,6 +15,8 @@ npm run lint     # Run ESLint (next/core-web-vitals + next/typescript)
 
 **Stale build lock:** If `npm run build` says "Another next build process is already running", remove `.next/.next-build-lock` or kill stale node processes.
 
+**Scripts:** Node.js scripts in `scripts/` require `dotenv` for env loading. They read from `.env.local` and use `SUPABASE_SECRET_KEY` (not `SUPABASE_SERVICE_ROLE_KEY`).
+
 ## Project Structure
 
 ```
@@ -22,21 +24,21 @@ kbl-v3/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── dashboard/          # Main dashboard (server component)
-│   │   ├── user/[user_id]/     # User profile page with rank chart
+│   │   ├── user/[user_id]/     # User profile page with rank chart + match history
 │   │   ├── match/[match_id]/   # Match standings
 │   │   ├── team/[match_id]/    # Team builder/draft
-│   │   ├── admin/              # Admin match management
+│   │   ├── admin/              # Admin match management + score calculation
 │   │   ├── login/              # Auth (email + Google OAuth)
 │   │   ├── api/                # API routes (rescore, cron)
 │   │   ├── layout.tsx          # Root layout (TopNav + ThemeToggle)
 │   │   └── globals.css         # All styles (no CSS modules)
 │   ├── components/             # Shared React components
-│   ├── utils/supabase/         # Supabase client (server + client)
+│   ├── utils/supabase/         # Supabase client (server + client + admin)
 │   └── data/                   # Static data (cricbuzz_ids.json)
 ├── supabase/
 │   ├── schema.sql              # DB schema
-│   └── migrations/             # SQL migrations
-└── scripts/                    # One-off scripts (backfill-global-ranks.mjs)
+│   └── migrations/             # SQL migrations (001–004)
+└── scripts/                    # One-off scripts (backfill-global-ranks.mjs, backfill-match-global-ranks.mjs)
 ```
 
 ## Architecture
@@ -44,7 +46,7 @@ kbl-v3/
 - **Next.js 16.2.1** with App Router, Turbopack
 - **React 19** — Server Components by default, `'use client'` for interactivity
 - **Supabase** — PostgreSQL + Auth via `@supabase/ssr` (cookie-based sessions)
-- **Recharts** — Charting library (user profile rank history)
+- **Recharts** — Charting library (user profile rank history, composed chart with bars + line)
 - **Lucide React** — Icon library
 - **No Tailwind, no CSS-in-JS, no component library** — plain CSS custom properties + inline styles
 
@@ -99,10 +101,38 @@ kbl-v3/
 - Data fetching: always server-side via Supabase SSR client
 
 ### Database
-- Supabase PostgreSQL with Row Level Security (RLS) enabled on all tables
-- RLS policies: public SELECT on most tables, user-scoped INSERT/UPDATE on user_teams
-- Migrations live in `supabase/migrations/` — run manually via Supabase SQL Editor
-- Backfill scripts: Node.js scripts in `scripts/` using Supabase admin client (requires `SUPABASE_SERVICE_ROLE_KEY`)
+
+**Key tables:**
+- `profiles` — user accounts with `total_points` (cumulative)
+- `matches` — match metadata with `status` (upcoming/live/completed)
+- `user_match_ranks` — per-match scores: `raw_score`, `relative_rank`, `relative_points`
+- `user_global_rank_history` — global leaderboard position per match (computed after scoring)
+- `player_scores` — individual player fantasy points per match
+- `user_teams` — user's drafted team per match
+
+**Score calculation pipeline** (`src/app/admin/actions.ts` → `calculateScoresFromCricbuzz`):
+1. Scrapes Cricbuzz scorecard HTML
+2. Computes fantasy points for each player (batting, bowling, fielding)
+3. Sums user team scores with captain (x2) and vice-captain (x1.5) multipliers
+4. Computes relative rankings with tie-breaking
+5. Upserts `user_match_ranks` and updates `profiles.total_points`
+6. **Computes global ranks** by sorting all profiles by `total_points` and upserting into `user_global_rank_history` for that match
+
+**Global rank computation:**
+- Incremental: after each match is scored, ranks are computed for that specific match only
+- Based on `profiles.total_points` at the time of scoring
+- Stored in `user_global_rank_history(user_id, match_id, global_rank)`
+- SQL function `compute_global_ranks()` exists for full historical rebuilds (migration 004)
+
+**Migrations:** run manually via Supabase SQL Editor
+- `001_add_global_rank.sql` — (deprecated, column removed)
+- `002_backfill_global_ranks.sql` — calls `compute_global_ranks()`
+- `003_user_global_rank_history.sql` — creates the global rank history table
+- `004_compute_global_ranks_function.sql` — PL/pgSQL function for full rebuild
+
+**Backfill scripts:** run with `node scripts/<name>.mjs` (reads `.env.local` via dotenv)
+- `backfill-global-ranks.mjs` — full historical backfill for all matches
+- `backfill-match-global-ranks.mjs <match_id>` — backfill global ranks for a single match
 
 ### Navigation
 - Use `Link` from `next/link` for client-side navigation
@@ -114,3 +144,8 @@ kbl-v3/
 - Dark/light theme via `data-theme` attribute on `<html>`
 - Persisted in `localStorage`
 - CSS variables swap between `:root` (dark) and `[data-theme='light']`
+
+### Environment Variables
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — anon/public key
+- `SUPABASE_SECRET_KEY` — secret key (used by admin client and scripts)
