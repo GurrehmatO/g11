@@ -454,6 +454,24 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
     }
   }
 
+  // 9. Compute global ranks for this match based on updated total_points
+  const { data: allProfiles } = await supabase
+    .from('profiles')
+    .select('id, total_points')
+    .order('total_points', { ascending: false })
+
+  if (allProfiles) {
+    for (let i = 0; i < allProfiles.length; i++) {
+      await supabase
+        .from('user_global_rank_history')
+        .upsert({
+          user_id: allProfiles[i].id,
+          match_id: matchId,
+          global_rank: i + 1,
+        }, { onConflict: 'user_id,match_id' })
+    }
+  }
+
   revalidatePath('/admin')
   revalidatePath('/dashboard')
   return { success: true }
