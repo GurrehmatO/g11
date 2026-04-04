@@ -111,6 +111,29 @@ export default async function DashboardPage() {
       <div className="dashboard-grid">
         <div className="stagger-2">
           <div className="glass-panel" style={{ padding: '1.75rem' }}>
+            {latestCompletedMatch && (
+              <div style={{ marginBottom: '2.5rem' }}>
+                <h2 className="section-header">Last Completed Game</h2>
+                <div className="match-card">
+                  <p className="match-date">
+                    {new Date(latestCompletedMatch.match_date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                  <div className="match-teams">
+                    <TeamLogo teamName={latestCompletedMatch.team_a} size={36} />
+                    <span className="match-vs">vs</span>
+                    <TeamLogo teamName={latestCompletedMatch.team_b} size={36} />
+                  </div>
+                  <div className="match-labels">
+                    <span>{latestCompletedMatch.team_a}</span>
+                    <span>{latestCompletedMatch.team_b}</span>
+                  </div>
+                  <Link href={`/match/${latestCompletedMatch.id}`} className="btn-primary" style={{ width: '100%', fontSize: '0.8rem', padding: '0.65rem', display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                    View Results →
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {liveMatches && liveMatches.length > 0 && (
               <div style={{ marginBottom: '2.5rem' }}>
                 <h2 className="section-header live">Live Matches</h2>
