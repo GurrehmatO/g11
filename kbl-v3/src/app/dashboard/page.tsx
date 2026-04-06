@@ -33,7 +33,7 @@ export default async function DashboardPage() {
       .limit(5),
     supabase
       .from('matches')
-      .select('id, name, match_date, team_a, team_b')
+      .select('id, name, match_date, team_a, team_b, abandoned')
       .eq('status', 'completed')
       .order('match_date', { ascending: false }),
     supabase
@@ -118,6 +118,9 @@ export default async function DashboardPage() {
                   <p className="match-date">
                     {new Date(latestCompletedMatch.match_date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
+                  {latestCompletedMatch.abandoned && (
+                    <div style={{ fontSize: '0.7rem', color: '#F59E0B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Abandoned — All participants awarded 1 point</div>
+                  )}
                   <div className="match-teams">
                     <TeamLogo teamName={latestCompletedMatch.team_a} size={36} />
                     <span className="match-vs">vs</span>

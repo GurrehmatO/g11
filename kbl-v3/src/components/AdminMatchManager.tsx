@@ -11,12 +11,14 @@ type Match = {
   team_a: string
   team_b: string
   status: string
+  abandoned?: boolean
 }
 
 const STATUS_COLORS: Record<string, string> = {
   live: '#EF4444',
   upcoming: 'var(--primary)',
-  completed: '#94A3B8'
+  completed: '#94A3B8',
+  abandoned: '#F59E0B'
 }
 
 const STATUS_OPTIONS: Record<string, string[]> = {
@@ -29,17 +31,20 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
   const [pending, startTransition] = useTransition()
   const [confirming, setConfirming] = useState<string | null>(null)
   const [cricbuzzUrl, setCricbuzzUrl] = useState('')
+  const [abandoned, setAbandoned] = useState(false)
 
   const handleRequest = (newStatus: string) => {
     setConfirming(newStatus)
+    setAbandoned(false)
   }
 
   const handleConfirm = () => {
     if (!confirming) return
     startTransition(async () => {
-      await changeMatchStatus(match.id, confirming, cricbuzzUrl)
+      await changeMatchStatus(match.id, confirming, cricbuzzUrl, confirming === 'completed' ? abandoned : false)
       setConfirming(null)
       setCricbuzzUrl('')
+      setAbandoned(false)
       onDone()
     })
   }
@@ -69,8 +74,8 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
       </div>
 
       {/* Status badge */}
-      <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: STATUS_COLORS[match.status], border: `1px solid ${STATUS_COLORS[match.status]}`, padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
-        {match.status}
+      <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: match.status === 'completed' && match.abandoned ? STATUS_COLORS.abandoned : STATUS_COLORS[match.status], border: `1px solid ${match.status === 'completed' && match.abandoned ? STATUS_COLORS.abandoned : STATUS_COLORS[match.status]}`, padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+        {match.status === 'completed' && match.abandoned ? 'abandoned' : match.status}
       </span>
 
       {/* Change status buttons */}
@@ -106,6 +111,15 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
                   placeholder={(match as any).cricbuzz_match_id ? `Using saved ID: ${(match as any).cricbuzz_match_id}` : "https://www.cricbuzz.com/..."}
                   style={{ width: '100%', background: '#0F172A', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 10px', fontSize: '0.75rem', color: '#fff' }}
                 />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.75rem', color: '#94A3B8', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={abandoned}
+                    onChange={(e) => setAbandoned(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: '#F59E0B' }}
+                  />
+                  Abandoned? (Everyone gets 1 point, no player scoring)
+                </label>
               </div>
             )}
 
@@ -113,7 +127,7 @@ function MatchRow({ match, onDone }: { match: Match; onDone: () => void }) {
               <button onClick={handleConfirm} disabled={pending} style={{ fontSize: '0.72rem', padding: '6px 16px', borderRadius: '6px', background: confirming === 'completed' ? '#22C55E' : STATUS_COLORS[confirming], color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
                 {pending ? 'Processing...' : 'Yes, Confirm'}
               </button>
-              <button onClick={() => { setConfirming(null); setCricbuzzUrl(''); }} disabled={pending} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: '6px', background: 'transparent', border: '1px solid #64748B', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => { setConfirming(null); setCricbuzzUrl(''); setAbandoned(false); }} disabled={pending} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: '6px', background: 'transparent', border: '1px solid #64748B', color: '#94A3B8', cursor: 'pointer' }}>
                 Cancel
               </button>
             </div>

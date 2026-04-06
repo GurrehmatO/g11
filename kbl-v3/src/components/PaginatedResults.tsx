@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { TeamLogo } from '@/components/TeamLogo'
 
-type Match = { id: string; match_date: string; team_a: string; team_b: string; }
+type Match = { id: string; match_date: string; team_a: string; team_b: string; abandoned?: boolean }
 
 const PAGE_SIZE = 5
 
@@ -38,6 +38,9 @@ export function PaginatedResults({ matches }: { matches: Match[] }) {
                 <TeamLogo teamName={match.team_a} size={24} />
                 <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94A3B8' }}>vs</span>
                 <TeamLogo teamName={match.team_b} size={24} />
+                {match.abandoned && (
+                  <span style={{ fontSize: '0.6rem', color: '#F59E0B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(245, 158, 11, 0.15)', padding: '1px 4px', borderRadius: '3px' }}>abandoned</span>
+                )}
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--border)', margin: 0 }}>
                 {new Date(match.match_date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}

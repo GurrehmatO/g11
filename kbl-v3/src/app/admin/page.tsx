@@ -21,9 +21,9 @@ export default async function AdminPage() {
   ] = await Promise.all([
     supabase.from('matches').select('*', { count: 'exact', head: true }),
     supabase.from('players').select('*', { count: 'exact', head: true }),
-    supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'live').order('match_date', { ascending: true }),
-    supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'upcoming').order('match_date', { ascending: true }),
-    supabase.from('matches').select('id, name, match_date, team_a, team_b, status').eq('status', 'completed').order('match_date', { ascending: false }),
+    supabase.from('matches').select('id, name, match_date, team_a, team_b, status, abandoned').eq('status', 'live').order('match_date', { ascending: true }),
+    supabase.from('matches').select('id, name, match_date, team_a, team_b, status, abandoned').eq('status', 'upcoming').order('match_date', { ascending: true }),
+    supabase.from('matches').select('id, name, match_date, team_a, team_b, status, abandoned').eq('status', 'completed').order('match_date', { ascending: false }),
   ])
 
   return (

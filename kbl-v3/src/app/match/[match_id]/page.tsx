@@ -69,8 +69,8 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
     hour12: true
   })
 
-  const statusLabel = isLive ? 'Live' : isCompleted ? 'Match Completed' : 'Upcoming'
-  const statusColor = isLive ? '#EF4444' : isCompleted ? '#22c55e' : 'var(--primary)'
+  const statusLabel = isLive ? 'Live' : isCompleted ? (match.abandoned ? 'Match Abandoned' : 'Match Completed') : 'Upcoming'
+  const statusColor = isLive ? '#EF4444' : isCompleted ? (match.abandoned ? '#F59E0B' : '#22c55e') : 'var(--primary)'
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', animation: 'fadeIn 0.5s ease' }}>
@@ -94,6 +94,11 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
       <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
         {isCompleted && hasRanks && (
           <>
+            {match.abandoned && (
+              <div style={{ padding: '0.75rem 1rem', background: 'rgba(245, 158, 11, 0.1)', borderBottom: '1px solid rgba(245, 158, 11, 0.2)', fontSize: '0.8rem', color: '#F59E0B', textAlign: 'center' }}>
+                ⏸ This match was abandoned. All participants awarded 1 point.
+              </div>
+            )}
             <div className="match-lb-header" style={{ display: 'flex', padding: '1rem', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>
               <div style={{ width: '60px', textAlign: 'center' }}>Rank</div>
               <div style={{ flex: 1 }}>Player</div>

@@ -150,28 +150,28 @@ export async function syncPlayers(formData?: FormData): Promise<void> {
   revalidatePath('/dashboard')
 }
 
-export async function changeMatchStatus(matchId: string, newStatus: string, cricbuzzUrl?: string): Promise<void> {
+export async function changeMatchStatus(matchId: string, newStatus: string, cricbuzzUrl?: string, abandoned = false): Promise<void> {
   const supabase = createAdminClient()
 
-  // Always update the status first
-  await supabase.from('matches').update({ status: newStatus }).eq('id', matchId)
+  await supabase.from('matches').update({ status: newStatus, abandoned: newStatus === 'completed' ? abandoned : false }).eq('id', matchId)
 
-  // If completing, attempt real-data scoring as a best-effort step
   if (newStatus === 'completed') {
     try {
-      let finalUrl = cricbuzzUrl
+      if (abandoned) {
+        await handleAbandonedMatch(matchId)
+      } else {
+        let finalUrl = cricbuzzUrl
 
-      // If no URL provided, try to find the saved Cricbuzz ID
-      if (!finalUrl) {
-        const { data: m } = await supabase.from('matches').select('cricbuzz_match_id').eq('id', matchId).single()
-        if (m?.cricbuzz_match_id) {
-          finalUrl = `https://www.cricbuzz.com/live-cricket-scorecard/${m.cricbuzz_match_id}`
+        if (!finalUrl) {
+          const { data: m } = await supabase.from('matches').select('cricbuzz_match_id').eq('id', matchId).single()
+          if (m?.cricbuzz_match_id) {
+            finalUrl = `https://www.cricbuzz.com/live-cricket-scorecard/${m.cricbuzz_match_id}`
+          }
         }
-      }
 
-      if (finalUrl) {
-        // Use Cricbuzz scraper
-        await calculateScoresFromCricbuzz(matchId, finalUrl)
+        if (finalUrl) {
+          await calculateScoresFromCricbuzz(matchId, finalUrl)
+        }
       }
     } catch (err) {
       console.error('Scoring pipeline error (match still marked completed):', err)
@@ -180,6 +180,65 @@ export async function changeMatchStatus(matchId: string, newStatus: string, cric
 
   revalidatePath('/admin')
   revalidatePath('/dashboard')
+}
+
+async function handleAbandonedMatch(matchId: string): Promise<void> {
+  const supabase = createAdminClient()
+
+  const { data: userTeams } = await supabase
+    .from('user_teams')
+    .select('user_id')
+    .eq('match_id', matchId)
+
+  if (!userTeams || userTeams.length === 0) return
+
+  for (const ut of userTeams) {
+    const { data: oldRank } = await supabase
+      .from('user_match_ranks')
+      .select('relative_points')
+      .eq('user_id', ut.user_id)
+      .eq('match_id', matchId)
+      .single()
+
+    const oldPoints = oldRank?.relative_points || 0
+    const pointDiff = 1 - oldPoints
+
+    await supabase.from('user_match_ranks').upsert({
+      user_id: ut.user_id,
+      match_id: matchId,
+      raw_score: 0,
+      relative_rank: 1,
+      relative_points: 1,
+    }, { onConflict: 'user_id,match_id' })
+
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('total_points')
+      .eq('id', ut.user_id)
+      .single()
+
+    await supabase
+      .from('profiles')
+      .update({ total_points: (prof?.total_points || 0) + pointDiff })
+      .eq('id', ut.user_id)
+  }
+
+  const { data: allProfiles } = await supabase
+    .from('profiles')
+    .select('id, total_points')
+    .order('total_points', { ascending: false })
+
+  if (allProfiles) {
+    for (let i = 0; i < allProfiles.length; i++) {
+      await supabase
+        .from('user_global_rank_history')
+        .upsert({
+          user_id: allProfiles[i].id,
+          match_id: matchId,
+          global_rank: i + 1,
+        }, { onConflict: 'user_id,match_id' })
+    }
+  }
 }
 
 
