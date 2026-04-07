@@ -46,6 +46,8 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
    )
    const [activeTab, setActiveTab] = useState('WK')
    const [step, setStep] = useState<'pick' | 'captain' | 'substitutes' | 'preview'>('pick')
+   const [previousStep, setPreviousStep] = useState<'pick' | 'captain' | 'substitutes'>('pick')
+   const [isFinalPreview, setIsFinalPreview] = useState(false)
    const [captainId, setCaptainId] = useState<string>(existingTeam?.captain_id || '')
    const [viceCaptainId, setViceCaptainId] = useState<string>(existingTeam?.vice_captain_id || '')
    const [error, setError] = useState('')
@@ -134,14 +136,20 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
      setSubstituteIds(newSubs)
    }
 
-   const moveSubstituteDown = (index: number) => {
-     if (index === substituteIds.length - 1) return
-     const newSubs = [...substituteIds]
-     ;[newSubs[index], newSubs[index + 1]] = [newSubs[index + 1], newSubs[index]]
-     setSubstituteIds(newSubs)
-   }
+    const moveSubstituteDown = (index: number) => {
+      if (index === substituteIds.length - 1) return
+      const newSubs = [...substituteIds]
+      ;[newSubs[index], newSubs[index + 1]] = [newSubs[index + 1], newSubs[index]]
+      setSubstituteIds(newSubs)
+    }
 
-  useEffect(() => {
+    const goToPreview = (final = false) => {
+      setPreviousStep(step as 'pick' | 'captain' | 'substitutes')
+      setIsFinalPreview(final)
+      setStep('preview')
+    }
+
+   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const matchDate = new Date(matchInfo.match_date).getTime();
@@ -173,6 +181,9 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
         return
       }
       newSet.add(id)
+      if (substituteIds.includes(id)) {
+        setSubstituteIds(substituteIds.filter(subId => subId !== id))
+      }
     }
     setSelectedIds(newSet)
   }
@@ -232,8 +243,8 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
      return (
        <div style={{ maxWidth: '480px', margin: '0 auto', background: '#111827', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
          {/* Header */}
-         <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#fff' }}>
-           <X size={24} onClick={() => setStep('substitutes')} style={{ cursor: 'pointer' }} />
+          <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#fff' }}>
+            <X size={24} onClick={() => setStep(previousStep)} style={{ cursor: 'pointer' }} />
            <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 600 }}>Team Preview</h2>
          </div>
 
@@ -291,16 +302,18 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
            </div>
          </div>
 
-         {/* Sticky save button */}
-         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
-           <button
-             disabled={loading}
-             onClick={handleSave}
-             style={{ flex: 1, background: loading ? '#22C55E80' : '#22C55E', color: '#fff', border: 'none', padding: '1rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '1rem', opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
-           >
-             {loading ? 'SAVING...' : 'CONFIRM & SAVE'}
-           </button>
-         </div>
+          {/* Sticky save button */}
+          {isFinalPreview && (
+          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
+            <button
+              disabled={loading}
+              onClick={handleSave}
+              style={{ flex: 1, background: loading ? '#22C55E80' : '#22C55E', color: '#fff', border: 'none', padding: '1rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '1rem', opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+            >
+              {loading ? 'SAVING...' : 'CONFIRM & SAVE'}
+            </button>
+          </div>
+          )}
        </div>
      )
    }
@@ -386,11 +399,16 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
         </div>
 
          {/* Sticky Fixed Bottom Bar Container */}
-         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
+         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
+        <button 
+          onClick={() => goToPreview()}
+          style={{ flex: 1, background: 'var(--foreground)', color: 'var(--background)', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+          <Eye size={18} /> PREVIEW
+        </button>
            <button
              disabled={!captainId || !viceCaptainId}
              onClick={() => setStep('substitutes')}
-             style={{ flex: 1, background: (!captainId || !viceCaptainId) ? 'var(--border)' : '#22C55E', color: '#fff', border: 'none', padding: '1rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '1rem', opacity: (!captainId || !viceCaptainId) ? 0.5 : 1, transition: '0.2s', cursor: (!captainId || !viceCaptainId) ? 'not-allowed' : 'pointer' }}
+             style={{ flex: 1, background: (!captainId || !viceCaptainId) ? 'var(--border)' : '#22C55E', color: '#fff', border: 'none', padding: '0.875rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '0.85rem', opacity: (!captainId || !viceCaptainId) ? 0.5 : 1, transition: '0.2s', cursor: (!captainId || !viceCaptainId) ? 'not-allowed' : 'pointer' }}
            >
              CONTINUE
            </button>
@@ -518,15 +536,19 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
              ))}
          </div>
 
-         {/* Sticky bottom */}
-         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', zIndex: 50 }}>
-           <button
-             onClick={() => setStep('preview')}
-             style={{ flex: 1, background: 'var(--foreground)', color: 'var(--background)', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}
-           >
-            {substituteIds.length > 0 ? `Continue with ${substituteIds.length} sub${substituteIds.length > 1 ? 's' : ''}` : 'Skip Substitutes'}
-           </button>
-         </div>
+          {/* Sticky bottom */}
+          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', zIndex: 50 }}>
+            <button
+              onClick={() => goToPreview()}
+              style={{ flex: 1, background: 'var(--foreground)', color: 'var(--background)', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+              <Eye size={18} /> PREVIEW
+            </button>
+            <button
+              onClick={() => goToPreview(true)}
+              style={{ flex: 1, background: 'var(--primary)', color: '#fff', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+             {substituteIds.length > 0 ? `Continue with ${substituteIds.length} sub${substituteIds.length > 1 ? 's' : ''}` : 'Skip Substitutes'}
+            </button>
+          </div>
        </div>
      )
    }
@@ -703,7 +725,7 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
       {/* Sticky Fixed Bottom Area */ }
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', zIndex: 50 }}>
         <button 
-          onClick={() => setStep('preview')}
+          onClick={() => goToPreview()}
           style={{ flex: 1, background: 'var(--foreground)', color: 'var(--background)', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
           <Eye size={18} /> PREVIEW
         </button>
