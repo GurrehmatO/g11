@@ -154,32 +154,6 @@ export async function changeMatchStatus(matchId: string, newStatus: string, cric
   const supabase = createAdminClient()
 
   await supabase.from('matches').update({ status: newStatus, abandoned: newStatus === 'completed' ? abandoned : false }).eq('id', matchId)
-
-  if (newStatus === 'completed') {
-    try {
-      if (abandoned) {
-        await handleAbandonedMatch(matchId)
-      } else {
-        let finalUrl = cricbuzzUrl
-
-        if (!finalUrl) {
-          const { data: m } = await supabase.from('matches').select('cricbuzz_match_id').eq('id', matchId).single()
-          if (m?.cricbuzz_match_id) {
-            finalUrl = `https://www.cricbuzz.com/live-cricket-scorecard/${m.cricbuzz_match_id}`
-          }
-        }
-
-        if (finalUrl) {
-          await calculateScoresFromCricbuzz(matchId, finalUrl)
-        }
-      }
-    } catch (err) {
-      console.error('Scoring pipeline error (match still marked completed):', err)
-    }
-  }
-
-  revalidatePath('/admin')
-  revalidatePath('/dashboard')
 }
 
 async function handleAbandonedMatch(matchId: string): Promise<void> {
@@ -290,7 +264,180 @@ function normName(name: string) {
 }
 
 // ─── Cricbuzz Scorecard Scraper & Scoring Pipeline ────────────────────────────
+// Legacy wrapper - use calculateScoresFromCricbuzzWithSubs for new scoring flow
 export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: string): Promise<{ success: boolean; error?: string }> {
+  return calculateScoresFromCricbuzzWithSubs(matchId, cricbuzzUrl, undefined)
+}
+
+// ─── Check which teams need substitution ───────────────────────────────────────
+export async function checkTeamsNeedingSubstitution(matchId: string): Promise<{
+  needs_substitution: boolean;
+  teams?: Array<{
+    userId: string;
+    userName: string;
+    starters: Array<{ id: string; name: string; role: string; team: string; isPlaying: boolean }>;
+    substitutes: Array<{ id: string; name: string; role: string; team: string; priority: number; isPlaying: boolean }>;
+    captainId: string;
+    viceCaptainId: string;
+  }>;
+  activePlayers?: string[];
+}> {
+  const supabase = createAdminClient()
+
+  const { data: match } = await supabase.from('matches').select('cricbuzz_match_id, team_a, team_b').eq('id', matchId).single()
+  if (!match?.cricbuzz_match_id) {
+    return { needs_substitution: false }
+  }
+
+  const squadsUrl = `https://www.cricbuzz.com/cricket-match-squads/${match.cricbuzz_match_id}`
+  const res = await fetch(squadsUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    cache: 'no-store'
+  })
+  if (!res.ok) return { needs_substitution: false }
+  const html = await res.text()
+
+  const activePlayers = new Set<string>()
+  const lowHtml = html.toLowerCase()
+  const playingXIStart = lowHtml.indexOf('>playing xi</h1>')
+  const substitutesStart = lowHtml.indexOf('>substitutes</h1>')
+  const benchStart = lowHtml.indexOf('>bench</h1>')
+
+  if (playingXIStart !== -1 && substitutesStart !== -1) {
+    const playingXIHtml = html.substring(playingXIStart, substitutesStart)
+    const endSubIdx = benchStart !== -1 ? benchStart : html.length
+    const substitutesHtml = html.substring(substitutesStart, endSubIdx)
+
+    const playerRegex = /href="\/profiles\/\d+\/[^"]+".*?<span>([^<]+)<\/span>/g
+    let m
+    while ((m = playerRegex.exec(playingXIHtml)) !== null) {
+      activePlayers.add(normName(m[1].trim()))
+    }
+
+    const subBlockRegex = /<a [^>]*href="\/profiles\/\d+\/[^"]+"[^>]*>([\s\S]*?)<\/a>/g
+    while ((m = subBlockRegex.exec(substitutesHtml)) !== null) {
+      if (m[1].includes('bg-cbHundred')) {
+        const nameMatch = m[1].match(/<span>([^<]+)<\/span>/)
+        if (nameMatch) activePlayers.add(normName(nameMatch[1].trim()))
+      }
+    }
+  }
+
+  const { data: dbPlayers } = await supabase.from('players').select('id, name, cricbuzz_name, team').in('team', [match.team_a, match.team_b])
+  if (!dbPlayers) return { needs_substitution: false }
+
+  const dbPlayersMap = new Map<string, any>()
+  for (const p of dbPlayers) {
+    dbPlayersMap.set(p.id, p)
+  }
+
+  const isPlayerActive = (playerId: string): boolean => {
+    const p = dbPlayersMap.get(playerId)
+    if (!p) return false
+    const nameNorm = normName(p.name)
+    const cricNameNorm = p.cricbuzz_name ? normName(p.cricbuzz_name) : null
+    return activePlayers.has(nameNorm) || (cricNameNorm !== null && activePlayers.has(cricNameNorm))
+  }
+
+  const { data: userTeams } = await supabase
+    .from('user_teams')
+    .select(`
+      id,
+      user_id,
+      captain_id,
+      vice_captain_id,
+      user_team_players(player_id),
+      user_substitutes(player_id, priority)
+    `)
+    .eq('match_id', matchId)
+
+  if (!userTeams || userTeams.length === 0) {
+    return { needs_substitution: false }
+  }
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name, email')
+    .in('id', userTeams.map((ut: any) => ut.user_id))
+
+  const profileMap = new Map<string, any>()
+  if (profiles) {
+    for (const p of profiles) {
+      profileMap.set(p.id, p)
+    }
+  }
+
+  const teamsNeedingSub: Array<{
+    userId: string;
+    userName: string;
+    starters: Array<{ id: string; name: string; role: string; team: string; isPlaying: boolean }>;
+    substitutes: Array<{ id: string; name: string; role: string; team: string; priority: number; isPlaying: boolean }>;
+    captainId: string;
+    viceCaptainId: string;
+  }> = []
+
+  for (const ut of userTeams) {
+    const starters = ut.user_team_players.map((utp: any) => utp.player_id)
+    const substitutes = (ut.user_substitutes || [])
+      .sort((a: any, b: any) => a.priority - b.priority)
+      .map((s: any) => ({ id: s.player_id, priority: s.priority }))
+
+    const profile = profileMap.get(ut.user_id)
+    const userName = profile?.display_name || profile?.email?.split('@')[0] || 'Unknown'
+
+    const nonPlaying: Array<{ id: string; name: string; role: string; team: string }> = []
+    for (const pid of starters) {
+      const p = dbPlayersMap.get(pid)
+      if (p && !isPlayerActive(pid)) {
+        nonPlaying.push({ id: p.id, name: p.name, role: p.role, team: p.team })
+      }
+    }
+
+    if (nonPlaying.length > 0 && substitutes.length > 0) {
+      const subsWithDetails = substitutes
+        .filter(s => dbPlayersMap.get(s.id))
+        .map(s => {
+          const p = dbPlayersMap.get(s.id)
+          return { id: p.id, name: p.name, role: p.role, team: p.team, priority: s.priority, isPlaying: isPlayerActive(s.id) }
+        })
+
+      teamsNeedingSub.push({
+        userId: ut.user_id,
+        userName: userName,
+        starters: starters.map(pid => {
+          const p = dbPlayersMap.get(pid)
+          if (!p) return { id: pid, name: 'Unknown', role: 'BAT', team: match.team_a, isPlaying: false }
+          return { id: p.id, name: p.name, role: p.role, team: p.team, isPlaying: isPlayerActive(pid) }
+        }),
+        substitutes: subsWithDetails,
+        captainId: ut.captain_id,
+        viceCaptainId: ut.vice_captain_id
+      })
+    }
+  }
+
+  return {
+    needs_substitution: teamsNeedingSub.length > 0,
+    teams: teamsNeedingSub,
+    activePlayers: Array.from(activePlayers)
+  }
+}
+
+// ─── Finalize scoring with manual substitutions ───────────────────────────────
+export async function finalizeScoringWithSubstitutions(
+  matchId: string,
+  cricbuzzUrl: string,
+  substitutions: Record<string, Record<string, string>>
+): Promise<{ success: boolean; error?: string }> {
+  return calculateScoresFromCricbuzzWithSubs(matchId, cricbuzzUrl, substitutions)
+}
+
+// Internal function that handles scoring with optional manual substitutions
+async function calculateScoresFromCricbuzzWithSubs(
+  matchId: string,
+  cricbuzzUrl: string,
+  manualSubstitutions?: Record<string, Record<string, string>>
+): Promise<{ success: boolean; error?: string }> {
   if (!matchId || !cricbuzzUrl) return { success: false, error: 'Missing matchId or cricbuzzUrl' }
 
   const supabase = createAdminClient()
@@ -457,7 +604,7 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
     }, { onConflict: 'match_id,player_id' })
   }
 
-  // 7. Calculate raw team scores and rankings (same as CricAPI pipeline)
+  // 7. Calculate team scores with optional manual substitutions
   const { data: userTeams } = await supabase
     .from('user_teams')
     .select('id, user_id, captain_id, vice_captain_id, user_team_players(player_id)')
@@ -466,14 +613,31 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
 
   const userRankings: { userId: string, rawScore: number }[] = []
   for (const ut of userTeams) {
+    let effectiveLineup = ut.user_team_players.map((utp: any) => utp.player_id)
+    
+    // Apply manual substitutions if provided
+    const userSubs = manualSubstitutions?.[ut.user_id]
+    if (userSubs) {
+      console.log(`[SCORING] Applying substitutions for user ${ut.user_id}:`, userSubs)
+      for (const [nonPlayingId, substituteId] of Object.entries(userSubs)) {
+        const idx = effectiveLineup.indexOf(nonPlayingId)
+        if (idx !== -1 && substituteId) {
+          console.log(`[SCORING] Replacing ${nonPlayingId} with ${substituteId} at index ${idx}`)
+          effectiveLineup[idx] = substituteId
+        } else {
+          console.log(`[SCORING] Failed to replace: idx=${idx}, substituteId=${substituteId}`)
+        }
+      }
+    }
+
     let rawScore = 0
-    const selectedIds = ut.user_team_players.map((utp: any) => utp.player_id)
-    for (const pid of selectedIds) {
+    for (const pid of effectiveLineup) {
       let pt = playerBasePoints[pid] || 0
       if (pid === ut.captain_id) pt *= 2
       else if (pid === ut.vice_captain_id) pt *= 1.5
       rawScore += pt
     }
+    console.log(`[SCORING] User ${ut.user_id} rawScore: ${rawScore}, lineup:`, effectiveLineup)
     rawScore = Math.round(rawScore * 10) / 10
     userRankings.push({ userId: ut.user_id, rawScore })
   }

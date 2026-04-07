@@ -14,13 +14,21 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
     supabase.from('matches').select('*').eq('id', params.match_id).single(),
     supabase
       .from('user_teams')
-      .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team)), user_substitutes(players(id, name, role, team), priority)')
+      .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team, cricbuzz_name)), user_substitutes(players(id, name, role, team, cricbuzz_name), priority)')
       .eq('match_id', params.match_id),
     supabase
       .from('player_scores')
       .select('player_id, points')
       .eq('match_id', params.match_id),
   ])
+
+  const { data: activePlayers } = match
+    ? await supabase
+        .from('players')
+        .select('name, cricbuzz_name')
+        .in('team', [match.team_a, match.team_b])
+        .eq('played_last_match', true)
+    : { data: null }
 
   if (!match) return <div>Match not found</div>
 
@@ -132,6 +140,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
                             matchScores={scoreMap} 
                             userName={r.profiles.display_name || r.profiles.email.split('@')[0]} 
                             teamA={match.team_a}
+                            activePlayers={activePlayers}
                           />
                         )}
                       </div>
@@ -188,6 +197,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
                             matchScores={scoreMap} 
                             userName={profile.display_name || profile.email.split('@')[0]} 
                             teamA={match.team_a}
+                            activePlayers={activePlayers}
                           />
                         )}
                       </div>
