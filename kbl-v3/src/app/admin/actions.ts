@@ -9,10 +9,10 @@ const CRICBUZZ_SERIES_ID = '9241' // IPL 2026
 
 export async function syncMatches(formData?: FormData): Promise<void> {
   const supabase = createAdminClient()
-  
+
   const res = await fetch(`https://api.cricapi.com/v1/series_info?apikey=${CRICAPI_KEY}&id=${IPL_SERIES_ID}`, { cache: 'no-store' })
   const json = await res.json()
-  
+
   if (json.status !== 'success') return
 
   const matches = json.data.matchList;
@@ -62,7 +62,7 @@ import cricbuzzData from '@/data/cricbuzz_ids.json'
 
 export async function discoverCricbuzzIds(): Promise<void> {
   const supabase = createAdminClient()
-  
+
   // 1. Fetch matches from DB that need an update
   const { data: dbMatches } = await supabase.from('matches').select('id, name, team_a, team_b')
   if (!dbMatches) return
@@ -92,7 +92,7 @@ export async function discoverCricbuzzIds(): Promise<void> {
     // Extract match number: "1st Match", "2nd Match" etc.
     const dbMatchNum = match.name.match(/(\d+)(st|nd|rd|th)\s+Match/i)
     const targetNum = dbMatchNum ? dbMatchNum[1] : undefined
-    
+
     let foundId: string | null = null
 
     // Method A: Check hardcoded/pre-mapped data (Guaranteed for regular season)
@@ -124,10 +124,10 @@ export async function discoverCricbuzzIds(): Promise<void> {
 
 export async function syncPlayers(formData?: FormData): Promise<void> {
   const supabase = createAdminClient()
-  
+
   const res = await fetch(`https://api.cricapi.com/v1/series_squad?apikey=${CRICAPI_KEY}&id=${IPL_SERIES_ID}`, { cache: 'no-store' })
   const json = await res.json()
-  
+
   if (json.status !== 'success') return
 
   for (const team of json.data) {
@@ -254,12 +254,12 @@ function battingPoints(r: number, b: number, fours: number, sixes: number, isDuc
   // SR bonus/penalty (min 10 balls faced)
   if (b >= 10) {
     const sr = (r / b) * 100
-    if (sr > 170)      pts += 6
+    if (sr > 170) pts += 6
     else if (sr > 150) pts += 4
     else if (sr > 130) pts += 2
-    else if (sr < 50)  pts -= 6
-    else if (sr < 60)  pts -= 4
-    else if (sr < 70)  pts -= 2
+    else if (sr < 50) pts -= 6
+    else if (sr < 60) pts -= 4
+    else if (sr < 70) pts -= 2
   }
   return pts
 }
@@ -274,9 +274,9 @@ function bowlingPoints(w: number, m: number, r: number, o: number): number {
   // Economy bonus/penalty (min 2 overs)
   if (o >= 2) {
     const eco = r / o
-    if (eco < 5)       pts += 6
-    else if (eco < 6)  pts += 4
-    else if (eco < 7)  pts += 2
+    if (eco < 5) pts += 6
+    else if (eco < 6) pts += 4
+    else if (eco < 7) pts += 2
     else if (eco >= 10 && eco < 11) pts -= 2
     else if (eco >= 11 && eco < 12) pts -= 4
     else if (eco >= 12) pts -= 6
@@ -287,14 +287,6 @@ function bowlingPoints(w: number, m: number, r: number, o: number): number {
 // ─── Helper: fuzzy name normaliser ────────────────────────────────────────────
 function normName(name: string) {
   return name.toLowerCase().replace(/[^a-z ]/g, '').trim()
-}
-
-// ─── Helper: map role to tab (used in scoring) ─────────────────────────────
-function getRoleTab(role: string) {
-  if (role.toUpperCase().includes('WK')) return 'WK'
-  if (role.toLowerCase().includes('allrounder')) return 'AR'
-  if (role.toLowerCase().includes('bowler')) return 'BOWL'
-  return 'BAT'
 }
 
 // ─── Cricbuzz Scorecard Scraper & Scoring Pipeline ────────────────────────────
@@ -347,7 +339,7 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
   const outDescRegex = /\\?"outDesc\\?":\s*\\?"([^"\\]+)\\?"/g
   while ((m = outDescRegex.exec(html)) !== null) {
     const desc = m[1].trim()
-    
+
     // Catch: "c Fielder b Bowler" but ignore c & b
     if (desc.startsWith('c ') && !desc.startsWith('c & b') && !desc.startsWith('c &amp; b')) {
       const cMatch = desc.match(/^c\s+(.+?)\s+b\s+/)
@@ -383,13 +375,13 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
     cache: 'no-store'
   })
   const squadsHtml = await cbSquadsRes.text()
-  
+
   const activePlayers = new Set<string>()
   const lowHtml = squadsHtml.toLowerCase()
   const playingXIStart = lowHtml.indexOf('>playing xi</h1>')
   const substitutesStart = lowHtml.indexOf('>substitutes</h1>')
   const benchStart = lowHtml.indexOf('>bench</h1>')
-  
+
   if (playingXIStart !== -1 && substitutesStart !== -1) {
     const playingXIHtml = squadsHtml.substring(playingXIStart, substitutesStart)
     const endSubIdx = benchStart !== -1 ? benchStart : squadsHtml.length
@@ -416,7 +408,7 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
   // so we avoid corrupting 'played_last_match' if an admin retroactively scores an old game
   const { data: latestA } = await supabase.from('matches').select('match_date').or(`team_a.eq.${matchData.team_a},team_b.eq.${matchData.team_a}`).eq('status', 'completed').order('match_date', { ascending: false }).limit(1).single()
   const { data: latestB } = await supabase.from('matches').select('match_date').or(`team_a.eq.${matchData.team_b},team_b.eq.${matchData.team_b}`).eq('status', 'completed').order('match_date', { ascending: false }).limit(1).single()
-  
+
   const isLatestForA = !latestA || new Date(matchData.match_date) >= new Date(latestA.match_date)
   const isLatestForB = !latestB || new Date(matchData.match_date) >= new Date(latestB.match_date)
 
@@ -453,135 +445,38 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
     }
 
     playerBasePoints[dbP.id] = pts
-    
+
     // Update played_last_match status ONLY IF this is the most recent completed match for their team
     const shouldUpdateFlag = (dbP.team === matchData.team_a && isLatestForA) || (dbP.team === matchData.team_b && isLatestForB)
     if (shouldUpdateFlag) {
       await supabase.from('players').update({ played_last_match: isActive }).eq('id', dbP.id)
     }
-    
+
     await supabase.from('player_scores').upsert({
       match_id: matchId, player_id: dbP.id, points: pts
     }, { onConflict: 'match_id,player_id' })
   }
 
-   // 7. Fetch user teams with substitutes
-   const { data: userTeams } = await supabase
-     .from('user_teams')
-     .select(`
-       id,
-       user_id,
-       captain_id,
-       vice_captain_id,
-       user_team_players ( player_id ),
-       user_substitutes ( player_id, priority )
-     `)
-     .eq('match_id', matchId)
-    if (!userTeams || userTeams.length === 0) return { success: false, error: 'No user teams found for this match' }
+  // 7. Calculate raw team scores and rankings (same as CricAPI pipeline)
+  const { data: userTeams } = await supabase
+    .from('user_teams')
+    .select('id, user_id, captain_id, vice_captain_id, user_team_players(player_id)')
+    .eq('match_id', matchId)
+  if (!userTeams || userTeams.length === 0) return { success: false, error: 'No user teams found for this match' }
 
-    // Helper: validate team composition (roles and team distribution)
-   const validateTeamComposition = (playerIds: string[], dbPlayersMap: Map<string, any>, teamA: string, teamB: string): boolean => {
-     let wk = 0, bat = 0, ar = 0, bowl = 0
-     let countA = 0, countB = 0
-     for (const pid of playerIds) {
-       const p = dbPlayersMap.get(pid)
-       if (!p) return false // missing player
-       const roleTab = getRoleTab(p.role)
-       if (roleTab === 'WK') wk++
-       else if (roleTab === 'BAT') bat++
-       else if (roleTab === 'AR') ar++
-       else if (roleTab === 'BOWL') bowl++
-       if (p.team === teamA) countA++
-       else if (p.team === teamB) countB++
-     }
-     return wk >= 1 && bat >= 1 && ar >= 1 && bowl >= 1 && countA >= 1 && countB >= 1 && countA <= 10 && countB <= 10
-   }
-
-    // Helper: check if a player is active (playing)
-    const isPlayerActive = (playerId: string, dbPlayersMap: Map<string, any>, activePlayers: Set<string>): boolean => {
-      const p = dbPlayersMap.get(playerId)
-      if (!p) return false
-      const nameNorm = normName(p.name)
-      const cricNameNorm = p.cricbuzz_name ? normName(p.cricbuzz_name) : null
-      return activePlayers.has(nameNorm) || (cricNameNorm !== null && activePlayers.has(cricNameNorm))
+  const userRankings: { userId: string, rawScore: number }[] = []
+  for (const ut of userTeams) {
+    let rawScore = 0
+    const selectedIds = ut.user_team_players.map((utp: any) => utp.player_id)
+    for (const pid of selectedIds) {
+      let pt = playerBasePoints[pid] || 0
+      if (pid === ut.captain_id) pt *= 2
+      else if (pid === ut.vice_captain_id) pt *= 1.5
+      rawScore += pt
     }
-
-   // Build dbPlayersMap for quick lookup
-   const dbPlayersMap = new Map<string, any>()
-   for (const p of dbPlayers) {
-     dbPlayersMap.set(p.id, p)
-   }
-
-   const userRankings: { userId: string, rawScore: number }[] = []
-
-   for (const ut of userTeams) {
-     const starters = ut.user_team_players.map((utp: any) => utp.player_id)
-     const substitutes = (ut.user_substitutes || [])
-       .sort((a: any, b: any) => a.priority - b.priority)
-       .map((s: any) => s.player_id)
-
-     // Determine which starters are not playing
-     const nonPlayingIndices: number[] = []
-     starters.forEach((pid, idx) => {
-       if (!isPlayerActive(pid, dbPlayersMap, activePlayers)) {
-         nonPlayingIndices.push(idx)
-       }
-     })
-
-     // Start with original lineup
-     let effectiveLineup = [...starters]
-     let usedSubstitutes: string[] = []
-
-     // Try to replace as many non-playing starters as possible, up to 4 subs, respecting priority and composition
-     const maxReplacements = Math.min(4, nonPlayingIndices.length)
-     let bestCount = -1
-     let bestLineup: string[] = effectiveLineup
-     let bestUsed: string[] = []
-
-     // Brute-force: try all subsets of first k active subs that are playing
-     // But we need to respect priority: if you skip a sub, you cannot use lower priority ones for earlier slots.
-     // So we consider k from maxReplacements down to 0.
-     outer: for (let k = maxReplacements; k >= 0; k--) {
-       // We need to choose k substitutes from the ordered list such that all chosen substitutes are active and we use the earliest possible ones.
-       // The simplest: take the first k substitutes that are active. But what if one of those k is not active? Then we take the next active ones, skipping inactive ones, but we must use exactly k subs. However, if we skip an inactive sub, that's fine; we just take the next active one. But the order of priority must be preserved: if sub #2 is inactive but sub #3 is active, we can use sub #3 as the second replacement (i.e., we can skip over inactive ones). The requirement says "first 2 will take their place" meaning you go down the priority list and assign replacements in order. So for k replacements needed, we take the first k active substitutes from the priority list. That's deterministic.
-       const candidateSubs: string[] = []
-       for (const subId of substitutes) {
-         if (isPlayerActive(subId, dbPlayersMap, activePlayers)) {
-           candidateSubs.push(subId)
-           if (candidateSubs.length >= k) break
-         }
-       }
-       if (candidateSubs.length < k) continue // not enough active subs for k replacements
-
-       // Build candidate lineup: replace first k non-playing starters (in order of appearance) with these k subs (in order selected)
-       const candidateLineup = [...starters]
-       for (let i = 0; i < k; i++) {
-         const idx = nonPlayingIndices[i]
-         candidateLineup[idx] = candidateSubs[i]
-       }
-
-       // Validate composition
-       if (!validateTeamComposition(candidateLineup, dbPlayersMap, matchData.team_a, matchData.team_b)) {
-         continue
-       }
-
-       // Found a valid assignment for k replacements; since k is decreasing, this is the maximum possible
-       bestLineup = candidateLineup
-       bestUsed = candidateSubs.slice(0, k)
-       break
-     }
-
-     // Calculate raw score using bestLineup
-     let rawScore = 0
-     for (const pid of bestLineup) {
-       let pt = playerBasePoints[pid] || 0
-       if (pid === ut.captain_id) pt *= 2
-       else if (pid === ut.vice_captain_id) pt *= 1.5
-       rawScore += pt
-     }
-     rawScore = Math.round(rawScore * 10) / 10
-     userRankings.push({ userId: ut.user_id, rawScore })
-   }
+    rawScore = Math.round(rawScore * 10) / 10
+    userRankings.push({ userId: ut.user_id, rawScore })
+  }
 
   // 8. Relative rank tie-breaker
   userRankings.sort((a, b) => b.rawScore - a.rawScore)
@@ -610,7 +505,7 @@ export async function calculateScoresFromCricbuzz(matchId: string, cricbuzzUrl: 
           user_id: u.userId, match_id: matchId,
           raw_score: u.rawScore, relative_rank: currentRank, relative_points: avg
         }, { onConflict: 'user_id,match_id' })
-        
+
         const { data: prof } = await supabase.from('profiles').select('total_points').eq('id', u.userId).single()
         await supabase.from('profiles').update({ total_points: (prof?.total_points || 0) + pointDiff }).eq('id', u.userId)
       }
