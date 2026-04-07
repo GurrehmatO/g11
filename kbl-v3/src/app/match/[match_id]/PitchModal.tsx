@@ -29,6 +29,7 @@ export default function PitchModal({ team, matchScores, userName, teamA }: any) 
   const captainId = team.captain_id
   const viceCaptainId = team.vice_captain_id
   const players = team.players
+  const substitutes = team.substitutes || []
 
   const renderPreviewRow = (title: string, playersList: any[]) => {
     if (playersList.length === 0) return null;
@@ -80,6 +81,22 @@ export default function PitchModal({ team, matchScores, userName, teamA }: any) 
           </div>
           <X size={24} onClick={() => setIsOpen(false)} style={{ cursor: 'pointer' }} />
         </div>
+
+        {/* Substitutes summary */}
+        {substitutes.length > 0 && (
+          <div style={{ padding: '0 1.5rem 1rem 1.5rem', background: '#0F172A' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Substitutes ({substitutes.length})
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {substitutes.map((p: any, idx: number) => (
+                <div key={p.id} style={{ fontSize: '0.75rem', color: '#FBBF24', fontWeight: 600, background: 'rgba(251, 191, 36, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                  {idx + 1}. {p.name}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* CSS Field */}
         <div style={{ 

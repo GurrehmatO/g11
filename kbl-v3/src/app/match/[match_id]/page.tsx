@@ -14,7 +14,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
     supabase.from('matches').select('*').eq('id', params.match_id).single(),
     supabase
       .from('user_teams')
-      .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team))')
+      .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team)), user_substitutes(players(id, name, role, team), priority)')
       .eq('match_id', params.match_id),
     supabase
       .from('player_scores')
@@ -51,10 +51,15 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
   if (userTeams) {
     userTeams.forEach((ut: any) => {
       const players = ut.user_team_players.map((utp: any) => utp.players).filter(Boolean)
+      const substitutes = (ut.user_substitutes || [])
+        .sort((a: any, b: any) => a.priority - b.priority)
+        .map((s: any) => s.players)
+        .filter(Boolean)
       teamMap[ut.user_id] = {
         captain_id: ut.captain_id,
         vice_captain_id: ut.vice_captain_id,
-        players
+        players,
+        substitutes
       }
     })
   }
