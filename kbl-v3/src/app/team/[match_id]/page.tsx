@@ -19,7 +19,7 @@ export default async function TeamPage(props: { params: Promise<{ match_id: stri
       .single(),
     supabase
       .from('user_teams')
-      .select('*, user_team_players(player_id)')
+      .select('*, user_team_players(player_id), user_substitutes(player_id, priority)')
       .eq('user_id', user.id)
       .eq('match_id', params.match_id)
       .single(),

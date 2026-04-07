@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { saveTeam } from './actions'
-import { Eye, ChevronLeft, Plus, Minus, Info, X } from 'lucide-react'
+import { Eye, ChevronLeft, Plus, Minus, Info, X, ArrowUp, ArrowDown } from 'lucide-react'
 import { RulesModal } from '@/components/RulesModal'
 import { TeamLogo } from '@/components/TeamLogo'
 import { PlayerAvatar } from '@/components/PlayerAvatar'
@@ -38,17 +38,20 @@ const getDeterministicNum = (str: string, min: number, max: number) => {
 }
 
 export default function TeamBuilder({ matchId, players, matchInfo, existingTeam }: any) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    new Set(existingTeam?.user_team_players?.map((p: any) => p.player_id) || [])
-  )
-  const [activeTab, setActiveTab] = useState('WK')
-  const [step, setStep] = useState<'pick' | 'captain' | 'preview'>('pick')
-  const [captainId, setCaptainId] = useState<string>(existingTeam?.captain_id || '')
-  const [viceCaptainId, setViceCaptainId] = useState<string>(existingTeam?.vice_captain_id || '')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [timeLeft, setTimeLeft] = useState('')
-  const [isRulesOpen, setIsRulesOpen] = useState(false)
+   const [selectedIds, setSelectedIds] = useState<Set<string>>(
+     new Set(existingTeam?.user_team_players?.map((p: any) => p.player_id) || [])
+   )
+   const [substituteIds, setSubstituteIds] = useState<string[]>(
+     existingTeam?.user_substitutes?.sort((a: any, b: any) => a.priority - b.priority).map((s: any) => s.player_id) || []
+   )
+   const [activeTab, setActiveTab] = useState('WK')
+   const [step, setStep] = useState<'pick' | 'captain' | 'substitutes' | 'preview'>('pick')
+   const [captainId, setCaptainId] = useState<string>(existingTeam?.captain_id || '')
+   const [viceCaptainId, setViceCaptainId] = useState<string>(existingTeam?.vice_captain_id || '')
+   const [error, setError] = useState('')
+   const [loading, setLoading] = useState(false)
+   const [timeLeft, setTimeLeft] = useState('')
+   const [isRulesOpen, setIsRulesOpen] = useState(false)
 
   // Generic team stats
   const teamA = matchInfo.team_a;
@@ -94,12 +97,49 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
     return false;
   }
 
-  const handleDisabledClick = (p: any) => {
-    if (slotsLeft === 0) setError('Maximum 11 players allowed.');
-    else if (p.team === teamA && countA >= 10) setError(`Maximum 10 players from ${shortA} allowed.`);
-    else if (p.team === teamB && countB >= 10) setError(`Maximum 10 players from ${shortB} allowed.`);
-    else if (slotsLeft <= missingRoles.length) setError(`You must select a player from: ${missingRoles.join(', ')}`);
-  }
+   const handleDisabledClick = (p: any) => {
+     if (slotsLeft === 0) setError('Maximum 11 players allowed.');
+     else if (p.team === teamA && countA >= 10) setError(`Maximum 10 players from ${shortA} allowed.`);
+     else if (p.team === teamB && countB >= 10) setError(`Maximum 10 players from ${shortB} allowed.`);
+     else if (slotsLeft <= missingRoles.length) setError(`You must select a player from: ${missingRoles.join(', ')}`);
+   }
+
+   // Substitute management
+   const isPlayerInTeam = (playerId: string) => {
+     return selectedIds.has(playerId) || substituteIds.includes(playerId)
+   }
+
+   const addSubstitute = (playerId: string) => {
+     if (substituteIds.length >= 4) {
+       setError('Maximum 4 substitutes allowed.')
+       return
+     }
+     if (substituteIds.includes(playerId)) {
+       setError('Player already selected as substitute.')
+       return
+     }
+     setError('')
+     setSubstituteIds([...substituteIds, playerId])
+   }
+
+   const removeSubstitute = (index: number) => {
+     const newSubs = substituteIds.filter((_, i) => i !== index)
+     setSubstituteIds(newSubs)
+   }
+
+   const moveSubstituteUp = (index: number) => {
+     if (index === 0) return
+     const newSubs = [...substituteIds]
+     ;[newSubs[index - 1], newSubs[index]] = [newSubs[index], newSubs[index - 1]]
+     setSubstituteIds(newSubs)
+   }
+
+   const moveSubstituteDown = (index: number) => {
+     if (index === substituteIds.length - 1) return
+     const newSubs = [...substituteIds]
+     ;[newSubs[index], newSubs[index + 1]] = [newSubs[index + 1], newSubs[index]]
+     setSubstituteIds(newSubs)
+   }
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -137,27 +177,27 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
     setSelectedIds(newSet)
   }
 
-  const handleSave = async () => {
-    if (selectedIds.size !== 11) {
-      setError('You must select exactly 11 players.')
-      return
-    }
-    if (!captainId || !viceCaptainId) {
-      setError('You must select a Captain (C) and Vice-Captain (VC).')
-      return
-    }
-    if (captainId === viceCaptainId) {
-      setError('Captain and Vice-Captain must be different.')
-      return
-    }
+   const handleSave = async () => {
+     if (selectedIds.size !== 11) {
+       setError('You must select exactly 11 players.')
+       return
+     }
+     if (!captainId || !viceCaptainId) {
+       setError('You must select a Captain (C) and Vice-Captain (VC).')
+       return
+     }
+     if (captainId === viceCaptainId) {
+       setError('Captain and Vice-Captain must be different.')
+       return
+     }
 
-    setLoading(true)
-    const res = await saveTeam(matchId, Array.from(selectedIds), captainId, viceCaptainId)
-    if (res?.error) {
-      setError(res.error)
-      setLoading(false)
-    }
-  }
+     setLoading(true)
+     const res = await saveTeam(matchId, Array.from(selectedIds), captainId, viceCaptainId, substituteIds)
+     if (res?.error) {
+       setError(res.error)
+       setLoading(false)
+     }
+   }
 
   const renderPreviewRow = (title: string, playersList: any[]) => {
     if (playersList.length === 0) return null;
@@ -186,55 +226,84 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
     )
   }
 
-  if (step === 'preview') {
-    return (
-      <div style={{ maxWidth: '480px', margin: '0 auto', background: '#111827', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
-        {/* Header */}
-        <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#fff' }}>
-          <X size={24} onClick={() => setStep('pick')} style={{ cursor: 'pointer' }} />
-          <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 600 }}>Team Preview</h2>
-        </div>
+    if (step === 'preview') {
+      const selectedSubstitutes = substituteIds.map(id => players.find((p: any) => p.id === id)).filter(Boolean) as any[]
 
-        {/* Sub Header */}
-        <div style={{ padding: '0 1.5rem 1rem 1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', gap: '2rem' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Players</div>
-            <div style={{ fontWeight: 700 }}>{selectedIds.size}/11</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#1E293B', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-            <span style={{ fontSize: '0.75rem', background: '#fff', color: '#000', padding: '0 4px', borderRadius: '2px', fontWeight: 'bold' }}>{shortA}</span>
-            <span style={{ fontWeight: 700 }}>{countA} : {countB}</span>
-            <span style={{ fontSize: '0.75rem', background: '#475569', color: '#fff', padding: '0 4px', borderRadius: '2px', fontWeight: 'bold' }}>{shortB}</span>
-          </div>
-        </div>
+     return (
+       <div style={{ maxWidth: '480px', margin: '0 auto', background: '#111827', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
+         {/* Header */}
+         <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', color: '#fff' }}>
+           <X size={24} onClick={() => setStep('substitutes')} style={{ cursor: 'pointer' }} />
+           <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 600 }}>Team Preview</h2>
+         </div>
 
-        {/* CSS Field */}
-        <div style={{
-          flex: 1,
-          background: '#34A853',
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,0,0,0.06) 40px, rgba(0,0,0,0.06) 80px)',
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          paddingTop: '1.5rem',
-          paddingBottom: '2rem'
-        }}>
-          {/* 30 Yard Oval */}
-          <div style={{ position: 'absolute', top: '15%', left: '5%', right: '5%', bottom: '15%', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '100px / 200px', zIndex: 1 }} />
-          {/* Pitch Area */}
-          <div style={{ position: 'absolute', top: '35%', left: '38%', right: '38%', height: '30%', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255,255,255,0.15)', zIndex: 1 }} />
+         {/* Substitutes summary */}
+         {selectedSubstitutes.length > 0 && (
+           <div style={{ padding: '0 1.5rem 1rem 1.5rem' }}>
+             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+               Substitutes ({selectedSubstitutes.length})
+             </div>
+             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+               {selectedSubstitutes.map((p, idx) => (
+                 <div key={p.id} style={{ fontSize: '0.75rem', color: '#FBBF24', fontWeight: 600, background: 'rgba(251, 191, 36, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                   {idx + 1}. {p.name}
+                 </div>
+               ))}
+             </div>
+           </div>
+         )}
 
-          <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-around' }}>
-            {renderPreviewRow('WICKET-KEEPERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'WK'))}
-            {renderPreviewRow('BATTERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'BAT'))}
-            {renderPreviewRow('ALL-ROUNDERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'AR'))}
-            {renderPreviewRow('BOWLERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'BOWL'))}
-          </div>
-        </div>
-      </div>
-    )
-  }
+         {/* Sub Header */}
+         <div style={{ padding: '0 1.5rem 1rem 1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', gap: '2rem' }}>
+           <div style={{ textAlign: 'center' }}>
+             <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Players</div>
+             <div style={{ fontWeight: 700 }}>{selectedIds.size}/11</div>
+           </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#1E293B', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+             <span style={{ fontSize: '0.75rem', background: '#fff', color: '#000', padding: '0 4px', borderRadius: '2px', fontWeight: 'bold' }}>{shortA}</span>
+             <span style={{ fontWeight: 700 }}>{countA} : {countB}</span>
+             <span style={{ fontSize: '0.75rem', background: '#475569', color: '#fff', padding: '0 4px', borderRadius: '2px', fontWeight: 'bold' }}>{shortB}</span>
+           </div>
+         </div>
+
+         {/* CSS Field */}
+         <div style={{
+           flex: 1,
+           background: '#34A853',
+           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,0,0,0.06) 40px, rgba(0,0,0,0.06) 80px)',
+           position: 'relative',
+           overflow: 'hidden',
+           display: 'flex',
+           flexDirection: 'column',
+           paddingTop: '1.5rem',
+           paddingBottom: '2rem'
+         }}>
+           {/* 30 Yard Oval */}
+           <div style={{ position: 'absolute', top: '15%', left: '5%', right: '5%', bottom: '15%', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '100px / 200px', zIndex: 1 }} />
+           {/* Pitch Area */}
+           <div style={{ position: 'absolute', top: '35%', left: '38%', right: '38%', height: '30%', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255,255,255,0.15)', zIndex: 1 }} />
+
+           <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-around' }}>
+             {renderPreviewRow('WICKET-KEEPERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'WK'))}
+             {renderPreviewRow('BATTERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'BAT'))}
+             {renderPreviewRow('ALL-ROUNDERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'AR'))}
+             {renderPreviewRow('BOWLERS', selectedPlayers.filter((p: any) => getRoleTab(p.role) === 'BOWL'))}
+           </div>
+         </div>
+
+         {/* Sticky save button */}
+         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
+           <button
+             disabled={loading}
+             onClick={handleSave}
+             style={{ flex: 1, background: loading ? '#22C55E80' : '#22C55E', color: '#fff', border: 'none', padding: '1rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '1rem', opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+           >
+             {loading ? 'SAVING...' : 'CONFIRM & SAVE'}
+           </button>
+         </div>
+       </div>
+     )
+   }
 
   if (step === 'captain') {
     return (
@@ -316,21 +385,153 @@ export default function TeamBuilder({ matchId, players, matchInfo, existingTeam 
           </div>
         </div>
 
-        {/* Sticky Fixed Bottom Bar Container */}
-        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
-          <button
-            disabled={loading || !captainId || !viceCaptainId}
-            onClick={handleSave}
-            style={{ flex: 1, background: '#22C55E', color: '#fff', border: 'none', padding: '1rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '1rem', opacity: (!captainId || !viceCaptainId || loading) ? 0.5 : 1, transition: '0.2s' }}
-          >
-            {loading ? 'SAVING...' : 'SAVE'}
-          </button>
-        </div>
-      </div>
-    )
-  }
+         {/* Sticky Fixed Bottom Bar Container */}
+         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)', zIndex: 50 }}>
+           <button
+             disabled={!captainId || !viceCaptainId}
+             onClick={() => setStep('substitutes')}
+             style={{ flex: 1, background: (!captainId || !viceCaptainId) ? 'var(--border)' : '#22C55E', color: '#fff', border: 'none', padding: '1rem', borderRadius: '24px', fontWeight: 'bold', fontSize: '1rem', opacity: (!captainId || !viceCaptainId) ? 0.5 : 1, transition: '0.2s', cursor: (!captainId || !viceCaptainId) ? 'not-allowed' : 'pointer' }}
+           >
+             CONTINUE
+           </button>
+         </div>
+       </div>
+     )
+   }
 
-  return (
+    if (step === 'substitutes') {
+      const availablePlayers = players.filter((p: any) => !isPlayerInTeam(p.id))
+      const selectedSubstitutes = substituteIds.map(id => players.find((p: any) => p.id === id)).filter(Boolean) as any[]
+
+     return (
+       <div style={{ maxWidth: '480px', margin: '0 auto', background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', position: 'relative' }}>
+         {/* Header */}
+         <div style={{ background: '#111420', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+           <ChevronLeft size={24} onClick={() => setStep('captain')} style={{ cursor: 'pointer' }} />
+           <div>
+             <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 600 }}>Select Substitutes</h2>
+             <div style={{ fontSize: '0.8rem', color: '#aaa' }}>Up to 4 players in priority order (optional)</div>
+           </div>
+         </div>
+
+         {/* Selected substitutes list */}
+         {selectedSubstitutes.length > 0 && (
+           <div style={{ padding: '1rem', background: 'var(--card)', borderBottom: '1px solid var(--border)' }}>
+             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+               Your Substitutes ({substituteIds.length}/4)
+             </div>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+               {selectedSubstitutes.map((p, idx) => (
+                 <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'var(--background)', borderRadius: '8px' }}>
+                   <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#DC2626', minWidth: '50px' }}>
+                     {idx + 1}{idx + 1 === 1 ? 'st' : idx + 1 === 2 ? 'nd' : idx + 1 === 3 ? 'rd' : 'th'} Sub
+                   </div>
+                   <div style={{ position: 'relative', marginRight: '0.5rem' }}>
+                     <PlayerAvatar playerName={p.name} teamName={p.team} size={36} />
+                   </div>
+                   <div style={{ flex: 1 }}>
+                     <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{p.name}</div>
+                     <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{getRoleTab(p.role)} • {p.totalPoints || 0} pts</div>
+                   </div>
+                   <button onClick={() => moveSubstituteUp(idx)} disabled={idx === 0} style={{ padding: '0.5rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', cursor: idx === 0 ? 'not-allowed' : 'pointer', opacity: idx === 0 ? 0.3 : 1 }}>
+                     <ArrowUp size={16} />
+                   </button>
+                   <button onClick={() => moveSubstituteDown(idx)} disabled={idx === selectedSubstitutes.length - 1} style={{ padding: '0.5rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', cursor: idx === selectedSubstitutes.length - 1 ? 'not-allowed' : 'pointer', opacity: idx === selectedSubstitutes.length - 1 ? 0.3 : 1 }}>
+                     <ArrowDown size={16} />
+                   </button>
+                   <button onClick={() => removeSubstitute(idx)} style={{ padding: '0.5rem', background: 'transparent', border: '1px solid #EF4444', borderRadius: '4px', color: '#EF4444', cursor: 'pointer' }}>
+                     <X size={16} />
+                   </button>
+                 </div>
+               ))}
+             </div>
+           </div>
+         )}
+
+         {/* Player tabs */}
+         <div style={{ display: 'flex', background: 'var(--card)', color: 'var(--foreground)', borderBottom: '1px solid var(--border)' }}>
+            {['WK', 'BAT', 'AR', 'BOWL'].map(tab => {
+              const countInTab = availablePlayers.filter((p: any) => getRoleTab(p.role) === tab).length
+             return (
+               <div
+                 key={tab}
+                 onClick={() => setActiveTab(tab)}
+                 style={{
+                   flex: 1,
+                   textAlign: 'center',
+                   padding: '1rem 0',
+                   fontSize: '0.85rem',
+                   fontWeight: 700,
+                   color: activeTab === tab ? '#DC2626' : '#64748B',
+                   borderBottom: activeTab === tab ? '3px solid #DC2626' : '3px solid transparent',
+                   cursor: 'pointer',
+                   transition: 'all 0.2s'
+                 }}
+               >
+                 {tab} {countInTab > 0 && `(${countInTab})`}
+               </div>
+             )
+           })}
+         </div>
+
+         {/* Player list */}
+         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '100px' }}>
+           {availablePlayers
+             .filter((p: any) => getRoleTab(p.role) === activeTab)
+             .sort((a: any, b: any) => {
+               const bPlayed = b.played_last_match ? 1 : 0;
+               const aPlayed = a.played_last_match ? 1 : 0;
+               if (bPlayed !== aPlayed) return bPlayed - aPlayed;
+               return (b.totalPoints || 0) - (a.totalPoints || 0);
+             })
+             .map((p: any) => (
+               <div
+                 key={p.id}
+                 onClick={() => addSubstitute(p.id)}
+                 style={{
+                   display: 'flex',
+                   alignItems: 'center',
+                   padding: '1rem',
+                   borderBottom: '1px solid var(--border)',
+                   background: 'var(--card)',
+                   cursor: 'pointer'
+                 }}
+               >
+                 <div style={{ position: 'relative', marginRight: '1rem' }}>
+                   <PlayerAvatar playerName={p.name} teamName={p.team} size={48} />
+                   <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', background: p.team === teamA ? '#1E293B' : '#65A30D', color: '#fff', fontSize: '0.55rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                     {getShortName(p.team)}
+                   </div>
+                 </div>
+                 <div style={{ flex: 1 }}>
+                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>{p.name}</div>
+                   <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                     <span>{getRoleTab(p.role)}</span>
+                     <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#64748B', opacity: 0.5 }}></span>
+                     <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{p.totalPoints || 0} pts</span>
+                   </div>
+                 </div>
+                 <div style={{ width: '15%', textAlign: 'right' }}>
+                   <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#22C55E' }}>ADD</div>
+                 </div>
+               </div>
+             ))}
+         </div>
+
+         {/* Sticky bottom */}
+         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'var(--card)', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', zIndex: 50 }}>
+           <button
+             onClick={() => setStep('preview')}
+             style={{ flex: 1, background: 'var(--foreground)', color: 'var(--background)', padding: '0.875rem', borderRadius: '24px', border: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}
+           >
+            {substituteIds.length > 0 ? `Continue with ${substituteIds.length} sub${substituteIds.length > 1 ? 's' : ''}` : 'Skip Substitutes'}
+           </button>
+         </div>
+       </div>
+     )
+   }
+
+   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', background: 'var(--background)', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', position: 'relative' }}>
 
       {/* ---------- STICKY TOP VIEWPORT ENCLOSURE ---------- */}

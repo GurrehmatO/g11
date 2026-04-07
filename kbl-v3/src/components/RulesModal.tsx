@@ -47,7 +47,16 @@ export function RulesModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
           </ul>
 
           <h3 style={{ color: '#22C55E', fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: 700 }}>🏏 2. Match Point System (T20)</h3>
-          
+
+          <h4 style={{ fontSize: '0.85rem', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Substitutes (Optional)</h4>
+          <ul style={{ fontSize: '0.9rem', lineHeight: 1.6, color: '#CBD5E1', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+            <li style={{ marginBottom: '0.5rem' }}>You can select up to 4 extra players as substitutes in priority order.</li>
+            <li style={{ marginBottom: '0.5rem' }}>If any of your first 11 players do not play, substitutes automatically replace them, respecting team composition rules.</li>
+            <li>The 1st sub takes the first non-playing spot, 2nd sub takes the second, etc.</li>
+            <li>Only substitutes who are playing will be used; inactive substitutes are skipped.</li>
+            <li>If no valid substitution is possible, as many valid subs as possible are used.</li>
+          </ul>
+
           <h4 style={{ fontSize: '0.85rem', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Batting</h4>
           <ul style={{ fontSize: '0.9rem', lineHeight: 1.6, color: '#CBD5E1', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
             <li>Run: +1</li>
