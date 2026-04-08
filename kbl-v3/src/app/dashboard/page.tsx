@@ -59,25 +59,27 @@ export default async function DashboardPage() {
 
   if (latestCompletedMatch) {
     rankPromises.push(
-      supabase
-        .from('user_global_rank_history')
-        .select('user_id, global_rank')
-        .eq('match_id', latestCompletedMatch.id)
-        .then(({ data: lr }) => {
-          lr?.forEach(r => latestRanks.set(r.user_id, r.global_rank))
-        })
+      (async () => {
+        const { data: lr } = await supabase
+          .from('user_global_rank_history')
+          .select('user_id, global_rank')
+          .eq('match_id', latestCompletedMatch.id)
+        
+        lr?.forEach(r => latestRanks.set(r.user_id, r.global_rank))
+      })()
     )
   }
 
   if (previousCompletedMatch) {
     rankPromises.push(
-      supabase
-        .from('user_global_rank_history')
-        .select('user_id, global_rank')
-        .eq('match_id', previousCompletedMatch.id)
-        .then(({ data: pr }) => {
-          pr?.forEach(r => previousRanks.set(r.user_id, r.global_rank))
-        })
+      (async () => {
+        const { data: pr } = await supabase
+          .from('user_global_rank_history')
+          .select('user_id, global_rank')
+          .eq('match_id', previousCompletedMatch.id)
+        
+        pr?.forEach(r => previousRanks.set(r.user_id, r.global_rank))
+      })()
     )
   }
 
@@ -145,7 +147,7 @@ export default async function DashboardPage() {
                     const teamsJoined = match.user_teams?.[0]?.count || 0;
                     return (
                       <div key={match.id} className="match-card live">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                           <span className="live-badge">
                             <span className="live-dot" />
                             In Progress
@@ -179,7 +181,7 @@ export default async function DashboardPage() {
                   const teamsJoined = match.user_teams?.[0]?.count || 0;
                   return (
                     <div key={match.id} className="match-card">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <p className="match-date">
                           {new Date(match.match_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} IST
                         </p>
