@@ -10,22 +10,23 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
 
   if (!user) redirect('/login')
 
-  const [{ data: match }, { data: userTeams }, { data: scores }] = await Promise.all([
-    supabase.from('matches').select('*').eq('id', params.match_id).single(),
-    supabase
-      .from('user_teams')
-      .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team, cricbuzz_name)), user_substitutes(players(id, name, role, team, cricbuzz_name), priority)')
-      .eq('match_id', params.match_id),
-    supabase
-      .from('player_scores')
-      .select('player_id, points')
-      .eq('match_id', params.match_id),
-  ])
+  const { data: match } = await supabase.from('matches').select('*').eq('id', params.match_id).single()
 
   if (!match) return <div>Match not found</div>
 
   const isCompleted = match.status === 'completed'
   const isLive = match.status === 'live'
+
+  const [{ data: userTeams }, { data: scores }] = await Promise.all([
+    supabase
+      .from('user_teams')
+      .select('user_id, captain_id, vice_captain_id, user_team_players(players(id, name, role, team, cricbuzz_name)), user_substitutes(players(id, name, role, team, cricbuzz_name), priority)')
+      .eq('match_id', params.match_id),
+    supabase
+      .from(isLive ? 'live_player_scores' : 'player_scores')
+      .select('player_id, points')
+      .eq('match_id', params.match_id),
+  ])
 
   const { data: activePlayers } = isCompleted
     ? await supabase
@@ -42,10 +43,10 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
         .eq('match_id', params.match_id)
     : { data: null }
 
-  const { data: ranks } = isCompleted
+  const { data: ranks } = (isCompleted || isLive)
     ? await supabase
-        .from('user_match_ranks')
-        .select('relative_rank, raw_score, relative_points, profiles(display_name, email, id)')
+        .from(isLive ? 'live_user_match_ranks' : 'user_match_ranks')
+        .select(`relative_rank, raw_score, ${isCompleted ? 'relative_points,' : ''} profiles(display_name, email, id)`)
         .eq('match_id', params.match_id)
         .order('relative_rank', { ascending: true })
     : { data: null }
@@ -105,7 +106,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
       </h2>
       
       <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-        {isCompleted && hasRanks && (
+        {(isCompleted || isLive) && hasRanks && (
           <>
             {match.abandoned && (
               <div style={{ padding: '0.75rem 1rem', background: 'rgba(245, 158, 11, 0.1)', borderBottom: '1px solid rgba(245, 158, 11, 0.2)', fontSize: '0.8rem', color: '#F59E0B', textAlign: 'center' }}>
@@ -116,7 +117,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
               <div style={{ width: '60px', textAlign: 'center' }}>Rank</div>
               <div style={{ flex: 1 }}>Player</div>
               <div style={{ width: '100px', textAlign: 'right' }}>Raw Score</div>
-              <div style={{ width: '120px', textAlign: 'right' }}>Match Points</div>
+              {isCompleted && <div style={{ width: '120px', textAlign: 'right' }}>Match Points</div>}
             </div>
             
             {ranks!.map((r: any, idx: number) => {
@@ -153,10 +154,12 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
                       <span className="mobile-only-label" style={{ fontSize: '0.65rem', textTransform: 'uppercase', display: 'none' }}>Raw Score</span>
                       {r.raw_score.toFixed(1)}
                     </div>
-                    <div className="match-lb-pts" style={{ width: '120px', textAlign: 'right', fontWeight: 'bold', fontSize: '1.2rem', color: '#22c55e', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <span className="mobile-only-label" style={{ fontSize: '0.65rem', textTransform: 'uppercase', display: 'none', color: '#94A3B8' }}>Match Points</span>
-                      +{r.relative_points}
-                    </div>
+                    {isCompleted && (
+                      <div className="match-lb-pts" style={{ width: '120px', textAlign: 'right', fontWeight: 'bold', fontSize: '1.2rem', color: '#22c55e', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <span className="mobile-only-label" style={{ fontSize: '0.65rem', textTransform: 'uppercase', display: 'none', color: '#94A3B8' }}>Match Points</span>
+                        +{r.relative_points}
+                      </div>
+                    )}
                   </div>
                 </div>
               )

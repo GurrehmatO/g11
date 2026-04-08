@@ -699,3 +699,197 @@ async function calculateScoresFromCricbuzzWithSubs(
   revalidatePath('/dashboard')
   return { success: true }
 }
+
+// ─── Live Temporary Scoring Pipeline ──────────────────────────────────────────
+export async function calculateLiveScoresFromCricbuzz(
+  matchId: string,
+  cricbuzzUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!matchId || !cricbuzzUrl) return { success: false, error: 'Missing matchId or cricbuzzUrl' }
+
+  const supabase = createAdminClient()
+
+  // 1. Fetch Cricbuzz page HTML
+  const res = await fetch(cricbuzzUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    cache: 'no-store'
+  })
+  if (!res.ok) return { success: false, error: `Cricbuzz HTTP error: ${res.status}` }
+  const html = await res.text()
+
+  // 2. Extract batting data from embedded JSON
+  const batRegex = /\\?"batId\\?":\s*(\d+)\s*,\s*\\?"batName\\?":\s*\\?"([^"\\]+)\\?"[^}]*?\\?"runs\\?":\s*(\d+)\s*,\s*\\?"balls\\?":\s*(\d+)\s*,\s*\\?"dots\\?":\s*\d+\s*,\s*\\?"fours\\?":\s*(\d+)\s*,\s*\\?"sixes\\?":\s*(\d+)[^}]*?\\?"strikeRate\\?":\s*([\d.]+)\s*,\s*\\?"outDesc\\?":\s*\\?"([^"\\]*)\\?"[^}]*?\\?"wicketCode\\?":\s*\\?"([^"\\]*)\\?"/g
+
+  const playerStats: Record<string, { name: string; runs: number; balls: number; fours: number; sixes: number; isDuck: boolean; wickets: number; maidens: number; runsConceded: number; overs: number; catches: number; stumpings: number; runOuts: number }> = {}
+
+  const ensure = (name: string) => {
+    const key = normName(name)
+    if (!playerStats[key]) playerStats[key] = { name, runs: 0, balls: 0, fours: 0, sixes: 0, isDuck: false, wickets: 0, maidens: 0, runsConceded: 0, overs: 0, catches: 0, stumpings: 0, runOuts: 0 }
+    return playerStats[key]
+  }
+
+  let m
+  while ((m = batRegex.exec(html)) !== null) {
+    const s = ensure(m[2])
+    s.runs += parseInt(m[3])
+    s.balls += parseInt(m[4])
+    s.fours += parseInt(m[5])
+    s.sixes += parseInt(m[6])
+    if (parseInt(m[3]) === 0 && parseInt(m[4]) > 0 && m[9] !== '') s.isDuck = true
+  }
+
+  // 3. Extract bowling data
+  const bowlRegex = /\\?"bowlerId\\?":\s*\d+\s*,\s*\\?"bowlName\\?":\s*\\?"([^"\\]+)\\?"[^}]*?\\?"overs\\?":\s*([\d.]+)\s*,\s*\\?"maidens\\?":\s*(\d+)\s*,\s*\\?"runs\\?":\s*(\d+)\s*,\s*\\?"wickets\\?":\s*(\d+)\s*,\s*\\?"economy\\?":\s*([\d.]+)/g
+
+  while ((m = bowlRegex.exec(html)) !== null) {
+    const s = ensure(m[1])
+    s.overs += parseFloat(m[2])
+    s.maidens += parseInt(m[3])
+    s.runsConceded += parseInt(m[4])
+    s.wickets += parseInt(m[5])
+  }
+
+  // 4. Extract fielding points
+  const outDescRegex = /\\?"outDesc\\?":\s*\\?"([^"\\]+)\\?"/g
+  while ((m = outDescRegex.exec(html)) !== null) {
+    const desc = m[1].trim()
+    if (desc.startsWith('c ') && !desc.startsWith('c & b') && !desc.startsWith('c &amp; b')) {
+      const cMatch = desc.match(/^c\s+(.+?)\s+b\s+/)
+      if (cMatch) { const s = ensure(cMatch[1].replace(/\(sub\)/gi, '').trim()); s.catches++ }
+    } else if (desc.startsWith('c & b') || desc.startsWith('c &amp; b')) {
+      const cbMatch = desc.match(/^c\s*(?:&|&amp;)\s*b\s+(.+)$/)
+      if (cbMatch) { const s = ensure(cbMatch[1].replace(/\(sub\)/gi, '').trim()); s.catches++ }
+    } else if (desc.startsWith('st ')) {
+      const stMatch = desc.match(/^st\s+(.+?)\s+b\s+/)
+      if (stMatch) { const s = ensure(stMatch[1].replace(/\(sub\)/gi, '').trim()); s.stumpings++ }
+    } else if (desc.startsWith('run out')) {
+      const roMatch = desc.match(/run out\s*\(([^)]+)\)/)
+      if (roMatch) {
+        const fielders = roMatch[1].split('/').map(f => f.replace(/\(sub\)/gi, '').trim())
+        for (const f of fielders) { const s = ensure(f); s.runOuts++ }
+      }
+    }
+  }
+
+  const statsCount = Object.keys(playerStats).length
+  if (statsCount === 0) return { success: false, error: 'No scorecard data found on the page' }
+
+  // 4a. Squads
+  const squadsUrl = cricbuzzUrl.replace('/live-cricket-scorecard/', '/cricket-match-squads/').replace('/live-cricket-scores/', '/cricket-match-squads/')
+  const cbSquadsRes = await fetch(squadsUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0' },
+    cache: 'no-store'
+  })
+  const squadsHtml = await cbSquadsRes.text()
+
+  const activePlayers = new Set<string>()
+  const lowHtml = squadsHtml.toLowerCase()
+  const playingXIStart = lowHtml.indexOf('>playing xi</h1>')
+  const substitutesStart = lowHtml.indexOf('>substitutes</h1>')
+  const benchStart = lowHtml.indexOf('>bench</h1>')
+
+  if (playingXIStart !== -1 && substitutesStart !== -1) {
+    const playingXIHtml = squadsHtml.substring(playingXIStart, substitutesStart)
+    const endSubIdx = benchStart !== -1 ? benchStart : squadsHtml.length
+    const substitutesHtml = squadsHtml.substring(substitutesStart, endSubIdx)
+
+    const playerRegex = /href="\/profiles\/\d+\/[^"]+".*?<span>([^<]+)<\/span>/g
+    let m
+    while ((m = playerRegex.exec(playingXIHtml)) !== null) activePlayers.add(normName(m[1].trim()))
+
+    const subBlockRegex = /<a [^>]*href="\/profiles\/\d+\/[^"]+"[^>]*>([\s\S]*?)<\/a>/g
+    while ((m = subBlockRegex.exec(substitutesHtml)) !== null) {
+      if (m[1].includes('bg-cbHundred')) {
+        const nameMatch = m[1].match(/<span>([^<]+)<\/span>/)
+        if (nameMatch) activePlayers.add(normName(nameMatch[1].trim()))
+      }
+    }
+  }
+
+  // 5. Load DB players
+  const { data: matchData } = await supabase.from('matches').select('team_a, team_b').eq('id', matchId).single()
+  if (!matchData) return { success: false, error: 'Match not found in database' }
+
+  const { data: dbPlayers } = await supabase.from('players').select('id, name, cricbuzz_name, team').in('team', [matchData.team_a, matchData.team_b])
+  if (!dbPlayers) return { success: false, error: 'No players found for this match' }
+
+  // 6. Extact-match and store live points
+  const playerBasePoints: Record<string, number> = {}
+
+  for (const dbP of dbPlayers) {
+    const normDb = normName(dbP.name)
+    const dbNameMatch = dbP.cricbuzz_name ? normName(dbP.cricbuzz_name) : normDb
+
+    let isActive = false
+    for (const actP of Array.from(activePlayers)) {
+      if (actP === dbNameMatch || actP === normDb) { isActive = true; break }
+    }
+
+    let matched: typeof playerStats[string] | null = null
+    for (const [key, stats] of Object.entries(playerStats)) {
+      if (key === dbNameMatch || key === normDb) { matched = stats; break }
+    }
+
+    let pts = isActive ? 4 : 0
+    if (matched) {
+      pts += battingPoints(matched.runs, matched.balls, matched.fours, matched.sixes, matched.isDuck)
+      pts += bowlingPoints(matched.wickets, matched.maidens, matched.runsConceded, matched.overs)
+      pts += matched.catches * 8
+      pts += matched.stumpings * 12
+      pts += matched.runOuts * 12
+    }
+
+    playerBasePoints[dbP.id] = pts
+
+    await supabase.from('live_player_scores').upsert({
+      match_id: matchId, player_id: dbP.id, points: pts
+    }, { onConflict: 'match_id,player_id' })
+  }
+
+  // 7. Calculate team scores (no manual substitutions)
+  const { data: userTeams } = await supabase
+    .from('user_teams')
+    .select('id, user_id, captain_id, vice_captain_id, user_team_players(player_id)')
+    .eq('match_id', matchId)
+  if (!userTeams || userTeams.length === 0) return { success: false, error: 'No user teams found' }
+
+  const userRankings: { userId: string, rawScore: number }[] = []
+  for (const ut of userTeams) {
+    let effectiveLineup = ut.user_team_players.map((utp: any) => utp.player_id)
+    let rawScore = 0
+    for (const pid of effectiveLineup) {
+      let pt = playerBasePoints[pid] || 0
+      if (pid === ut.captain_id) pt *= 2
+      else if (pid === ut.vice_captain_id) pt *= 1.5
+      rawScore += pt
+    }
+    rawScore = Math.round(rawScore * 10) / 10
+    userRankings.push({ userId: ut.user_id, rawScore })
+  }
+
+  // 8. Relative rank computation
+  userRankings.sort((a, b) => b.rawScore - a.rawScore)
+  const N = userRankings.length
+  if (N > 0) {
+    let currentRank = 1
+    while (currentRank <= N) {
+      let tieCount = 1
+      const score = userRankings[currentRank - 1].rawScore
+      while (currentRank - 1 + tieCount < N && userRankings[currentRank - 1 + tieCount].rawScore === score) tieCount++
+
+      for (let i = 0; i < tieCount; i++) {
+        const u = userRankings[currentRank - 1 + i]
+
+        await supabase.from('live_user_match_ranks').upsert({
+          user_id: u.userId, match_id: matchId,
+          raw_score: u.rawScore, relative_rank: currentRank
+        }, { onConflict: 'user_id,match_id' })
+      }
+      currentRank += tieCount
+    }
+  }
+
+  revalidatePath('/dashboard')
+  revalidatePath(`/match/${matchId}`)
+  return { success: true }
+}
