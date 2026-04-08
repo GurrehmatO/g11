@@ -1,6 +1,7 @@
 // scripts/run-live-sync.mjs
 setInterval(async () => {
-    console.log("Triggering live score sync...");
+    const time = new Date().toLocaleTimeString();
+    console.log(`[${time}] Triggering live score sync...`);
     const res = await fetch("https://g11-drab.vercel.app/api/live-score", {
         method: "POST",
         headers: {
