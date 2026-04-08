@@ -12,7 +12,7 @@ const getRoleTab = (role: string) => {
   return 'BAT'
 }
 
-export default function PitchModal({ team, matchScores, userName, teamA, activePlayers }: any) {
+export default function PitchModal({ team, matchScores, userName, teamA, activePlayers, isCompleted }: any) {
   const [isOpen, setIsOpen] = useState(false)
 
   if (!isOpen) {
@@ -40,7 +40,10 @@ export default function PitchModal({ team, matchScores, userName, teamA, activeP
     }
   }
 
-  const isPlayerActive = (p: any) => activeSet.has(normName(p.name)) || (p.cricbuzz_name && activeSet.has(normName(p.cricbuzz_name)))
+  const isPlayerActive = (p: any) => {
+    if (!isCompleted) return true
+    return activeSet.has(normName(p.name)) || (p.cricbuzz_name && activeSet.has(normName(p.cricbuzz_name)))
+  }
 
   const subIds = new Set(substitutes.map((s: any) => s.id))
   const usedSubs = substitutes.filter((s: any) => (matchScores[s.id] || 0) > 0)

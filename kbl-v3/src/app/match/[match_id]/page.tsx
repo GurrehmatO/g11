@@ -22,7 +22,12 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
       .eq('match_id', params.match_id),
   ])
 
-  const { data: activePlayers } = match
+  if (!match) return <div>Match not found</div>
+
+  const isCompleted = match.status === 'completed'
+  const isLive = match.status === 'live'
+
+  const { data: activePlayers } = isCompleted
     ? await supabase
         .from('players')
         .select('name, cricbuzz_name')
@@ -30,10 +35,12 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
         .eq('played_last_match', true)
     : { data: null }
 
-  if (!match) return <div>Match not found</div>
-
-  const isCompleted = match.status === 'completed'
-  const isLive = match.status === 'live'
+  const { data: liveEntries } = (isLive || isCompleted)
+    ? await supabase
+        .from('user_teams')
+        .select('user_id, captain_id, vice_captain_id, profiles(display_name, email, id), user_team_players(players(id, name, role, team))')
+        .eq('match_id', params.match_id)
+    : { data: null }
 
   const { data: ranks } = isCompleted
     ? await supabase
@@ -41,13 +48,6 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
         .select('relative_rank, raw_score, relative_points, profiles(display_name, email, id)')
         .eq('match_id', params.match_id)
         .order('relative_rank', { ascending: true })
-    : { data: null }
-
-  const { data: liveEntries } = (isLive || isCompleted)
-    ? await supabase
-        .from('user_teams')
-        .select('user_id, captain_id, vice_captain_id, profiles(display_name, email, id), user_team_players(players(id, name, role, team))')
-        .eq('match_id', params.match_id)
     : { data: null }
 
   const hasRanks = ranks && ranks.length > 0
@@ -141,6 +141,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
                             userName={r.profiles.display_name || r.profiles.email.split('@')[0]} 
                             teamA={match.team_a}
                             activePlayers={activePlayers}
+                            isCompleted={isCompleted}
                           />
                         )}
                       </div>
@@ -198,6 +199,7 @@ export default async function MatchResultPage(props: { params: Promise<{ match_i
                             userName={profile.display_name || profile.email.split('@')[0]} 
                             teamA={match.team_a}
                             activePlayers={activePlayers}
+                            isCompleted={isCompleted}
                           />
                         )}
                       </div>
