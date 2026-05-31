@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -44,6 +45,7 @@ export default async function RootLayout({
         </main>
         <ThemeToggle />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
